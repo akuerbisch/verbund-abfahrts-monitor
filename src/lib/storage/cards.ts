@@ -1,6 +1,6 @@
 import { safeGetItem, safeSetItem } from "@/lib/storage/safeStorage";
 import { CARDS_KEY } from "@/lib/storage/storageKeys";
-import { DEFAULT_REFRESH_INTERVAL_SECONDS, type DepartureCardConfig } from "@/types/domain";
+import { DEFAULT_MAX_DEPARTURES_PER_LINE, DEFAULT_REFRESH_INTERVAL_SECONDS, type DepartureCardConfig } from "@/types/domain";
 
 function isDepartureCardConfig(value: unknown): value is DepartureCardConfig {
     if (typeof value !== "object" || value === null) return false;
@@ -12,6 +12,7 @@ function isDepartureCardConfig(value: unknown): value is DepartureCardConfig {
         (card.stopLid === null || typeof card.stopLid === "string") &&
         typeof card.refreshIntervalSeconds === "number" &&
         typeof card.groupByLine === "boolean" &&
+        typeof card.maxDeparturesPerLine === "number" &&
         typeof card.createdAt === "string"
     );
 }
@@ -41,6 +42,7 @@ export function createDepartureCard(): DepartureCardConfig[] {
         stopLid: null,
         refreshIntervalSeconds: DEFAULT_REFRESH_INTERVAL_SECONDS,
         groupByLine: false,
+        maxDeparturesPerLine: DEFAULT_MAX_DEPARTURES_PER_LINE,
         createdAt: new Date().toISOString(),
     };
 

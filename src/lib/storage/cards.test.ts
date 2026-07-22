@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createDepartureCard, loadCards, removeCard, updateCard } from "./cards";
 import { CARDS_KEY } from "./storageKeys";
-import { DEFAULT_REFRESH_INTERVAL_SECONDS } from "@/types/domain";
+import { DEFAULT_MAX_DEPARTURES_PER_LINE, DEFAULT_REFRESH_INTERVAL_SECONDS } from "@/types/domain";
 
 class MemoryStorage {
     private store = new Map<string, string>();
@@ -35,6 +35,7 @@ describe("cards", () => {
             stopLid: null,
             refreshIntervalSeconds: DEFAULT_REFRESH_INTERVAL_SECONDS,
             groupByLine: false,
+            maxDeparturesPerLine: DEFAULT_MAX_DEPARTURES_PER_LINE,
         });
     });
 
