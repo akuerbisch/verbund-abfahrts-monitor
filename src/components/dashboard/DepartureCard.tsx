@@ -75,18 +75,22 @@ export function DepartureCard({ card, onUpdate, onRemove }: DepartureCardProps) 
                     ) : groups ? (
                         <div className="mt-2 flex flex-col divide-y divide-secondary">
                             {groups.map((group) => (
-                                <div key={`${group.line}-${group.direction}`} className="py-3">
-                                    <div className="flex items-center gap-2">
-                                        <Badge color="brand" size="md">
-                                            {group.line}
-                                        </Badge>
-                                        <span className="truncate text-sm text-tertiary">{group.direction}</span>
-                                    </div>
-                                    <ul className="mt-1 divide-y divide-secondary">
-                                        {group.departures.map((departure, index) => (
-                                            <DepartureRow key={index} departure={departure} hideLine hideDirection />
+                                <div key={group.line} className="py-3">
+                                    <Badge color="brand" size="md">
+                                        {group.line}
+                                    </Badge>
+                                    <div className="mt-1 grid grid-cols-2 gap-x-4">
+                                        {group.directionGroups.map((directionGroup) => (
+                                            <div key={directionGroup.direction} className={group.directionGroups.length === 1 ? "col-span-2" : "min-w-0"}>
+                                                <p className="truncate text-xs font-medium text-tertiary">{directionGroup.direction}</p>
+                                                <ul className="divide-y divide-secondary">
+                                                    {directionGroup.departures.map((departure, index) => (
+                                                        <DepartureRow key={index} departure={departure} hideLine hideDirection />
+                                                    ))}
+                                                </ul>
+                                            </div>
                                         ))}
-                                    </ul>
+                                    </div>
                                 </div>
                             ))}
                         </div>
