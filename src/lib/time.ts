@@ -91,3 +91,17 @@ export function formatHHMMSSToLabel(raw: string): string {
     const { actualHour, minute } = parseTimeRaw(raw);
     return `${String(actualHour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
+
+/**
+ * Formats a departure for display: minutes-until under an hour away (more
+ * useful at a glance), clock time ("HH:MM") from an hour away onward (a
+ * minute count stops being readable once it's in the hundreds).
+ */
+export function formatDepartureTime(minutesUntil: number, scheduledLabel: string, realLabel?: string): string {
+    if (minutesUntil < 60) {
+        if (minutesUntil <= 0) return "Due";
+        if (minutesUntil === 1) return "1 min";
+        return `${minutesUntil} min`;
+    }
+    return realLabel ?? scheduledLabel;
+}

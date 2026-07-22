@@ -1,12 +1,13 @@
-export interface SavedStop {
-    key: string;
-    name: string;
-    lid: string;
-    addedAt: string;
-}
+export type CardType = "departures";
 
-export interface Preferences {
+export interface DepartureCardConfig {
+    id: string;
+    type: "departures";
+    stopName: string | null;
+    stopLid: string | null;
     refreshIntervalSeconds: number;
+    groupByLine: boolean;
+    createdAt: string;
 }
 
 export const DEFAULT_REFRESH_INTERVAL_SECONDS = 60;

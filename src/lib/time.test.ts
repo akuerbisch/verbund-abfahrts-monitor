@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeMinutesUntil, formatHHMMSSToLabel, parseTimeRaw } from "./time";
+import { computeMinutesUntil, formatDepartureTime, formatHHMMSSToLabel, parseTimeRaw } from "./time";
 
 // 2026-07-22T18:00:00Z is 2026-07-22 20:00:00 in Vienna (CEST, UTC+2 in summer).
 const NOW = new Date("2026-07-22T18:00:00Z");
@@ -49,5 +49,34 @@ describe("formatHHMMSSToLabel", () => {
 
     it("formats a post-midnight overflow time", () => {
         expect(formatHHMMSSToLabel("250600")).toBe("01:06");
+    });
+});
+
+describe("formatDepartureTime", () => {
+    it("shows 'Due' for a departure at or before now", () => {
+        expect(formatDepartureTime(0, "20:10")).toBe("Due");
+        expect(formatDepartureTime(-1, "20:10")).toBe("Due");
+    });
+
+    it("shows singular '1 min'", () => {
+        expect(formatDepartureTime(1, "20:10")).toBe("1 min");
+    });
+
+    it("shows minutes for anything under an hour", () => {
+        expect(formatDepartureTime(45, "20:45")).toBe("45 min");
+        expect(formatDepartureTime(59, "20:59")).toBe("59 min");
+    });
+
+    it("switches to clock time at 60 minutes and beyond", () => {
+        expect(formatDepartureTime(60, "21:00")).toBe("21:00");
+        expect(formatDepartureTime(132, "22:12")).toBe("22:12");
+    });
+
+    it("prefers the real (delayed) label over the scheduled one when an hour or more away", () => {
+        expect(formatDepartureTime(90, "20:30", "20:45")).toBe("20:45");
+    });
+
+    it("falls back to the scheduled label when there is no real label", () => {
+        expect(formatDepartureTime(90, "20:30")).toBe("20:30");
     });
 });

@@ -2,13 +2,17 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ParsedDeparture } from "@/lib/vao/parseDepartures";
-import type { SavedStop } from "@/types/domain";
 
-export type StationBoardStatus = "loading" | "success" | "error" | "stale-error";
+export type StationBoardStatus = "unconfigured" | "loading" | "success" | "error" | "stale-error";
 
 interface RawBoard {
     departures: ParsedDeparture[];
     fetchedAt: Date;
+}
+
+interface Stop {
+    name: string;
+    lid: string;
 }
 
 // How often we recompute displayed "minutes until" labels between network
@@ -20,7 +24,10 @@ function adjustDepartures(raw: RawBoard, now: number): ParsedDeparture[] {
     return raw.departures.map((departure) => ({ ...departure, minutesUntil: departure.minutesUntil - elapsedMinutes }));
 }
 
-export function useStationBoard(stop: SavedStop, refreshIntervalSeconds: number) {
+export function useStationBoard(stop: Stop | null, refreshIntervalSeconds: number) {
+    const stopName = stop?.name ?? null;
+    const stopLid = stop?.lid ?? null;
+
     const [status, setStatus] = useState<StationBoardStatus>("loading");
     const [departures, setDepartures] = useState<ParsedDeparture[]>([]);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -28,11 +35,13 @@ export function useStationBoard(stop: SavedStop, refreshIntervalSeconds: number)
 
     const fetchDepartures = useCallback(
         async (signal?: AbortSignal) => {
+            if (!stopName || !stopLid) return;
+
             try {
                 const response = await fetch("/api/departures", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ name: stop.name, lid: stop.lid }),
+                    body: JSON.stringify({ name: stopName, lid: stopLid }),
                     signal,
                 });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -50,10 +59,12 @@ export function useStationBoard(stop: SavedStop, refreshIntervalSeconds: number)
                 setStatus(rawRef.current ? "stale-error" : "error");
             }
         },
-        [stop.name, stop.lid],
+        [stopName, stopLid],
     );
 
     useEffect(() => {
+        if (!stopName || !stopLid) return;
+
         const controller = new AbortController();
         // Deferred to a microtask so the initial fetch isn't a bare call in the effect body.
         void Promise.resolve().then(() => fetchDepartures(controller.signal));
@@ -87,7 +98,7 @@ export function useStationBoard(stop: SavedStop, refreshIntervalSeconds: number)
             stopPolling();
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
-    }, [fetchDepartures, refreshIntervalSeconds]);
+    }, [fetchDepartures, refreshIntervalSeconds, stopName, stopLid]);
 
     useEffect(() => {
         const id = setInterval(() => {
@@ -95,6 +106,10 @@ export function useStationBoard(stop: SavedStop, refreshIntervalSeconds: number)
         }, RECOMPUTE_TICK_MS);
         return () => clearInterval(id);
     }, []);
+
+    if (!stopName || !stopLid) {
+        return { departures: [], status: "unconfigured" as const, lastUpdated: null };
+    }
 
     return { departures, status, lastUpdated };
 }

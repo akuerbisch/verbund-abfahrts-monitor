@@ -1,0 +1,37 @@
+import { describe, expect, it } from "vitest";
+import { groupDeparturesByLine } from "./groupDepartures";
+import type { ParsedDeparture } from "./parseDepartures";
+
+function departure(overrides: Partial<ParsedDeparture>): ParsedDeparture {
+    return { line: "34", direction: "Thondorf", minutesUntil: 10, delayed: false, scheduledLabel: "20:10", ...overrides };
+}
+
+describe("groupDeparturesByLine", () => {
+    it("groups departures by line", () => {
+        const result = groupDeparturesByLine([
+            departure({ line: "34", minutesUntil: 5 }),
+            departure({ line: "58E", minutesUntil: 8 }),
+            departure({ line: "34", minutesUntil: 20 }),
+        ]);
+
+        expect(result.map((g) => g.line)).toEqual(["34", "58E"]);
+        expect(result[0].departures).toHaveLength(2);
+        expect(result[1].departures).toHaveLength(1);
+    });
+
+    it("sorts departures within a group by minutesUntil", () => {
+        const result = groupDeparturesByLine([departure({ line: "34", minutesUntil: 25 }), departure({ line: "34", minutesUntil: 5 })]);
+
+        expect(result[0].departures.map((d) => d.minutesUntil)).toEqual([5, 25]);
+    });
+
+    it("orders groups by their earliest departure", () => {
+        const result = groupDeparturesByLine([departure({ line: "34", minutesUntil: 30 }), departure({ line: "58E", minutesUntil: 2 })]);
+
+        expect(result.map((g) => g.line)).toEqual(["58E", "34"]);
+    });
+
+    it("returns an empty array for no departures", () => {
+        expect(groupDeparturesByLine([])).toEqual([]);
+    });
+});

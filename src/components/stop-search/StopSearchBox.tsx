@@ -8,18 +8,17 @@ import { Input } from "@/components/base/input/input";
 import type { StopSearchResult } from "@/lib/vao/parseStops";
 
 interface StopSearchBoxProps {
-    savedLids: Set<string>;
-    onAddStop: (result: StopSearchResult) => void;
+    onSelectStop: (result: StopSearchResult) => void;
 }
 
-export function StopSearchBox({ savedLids, onAddStop }: StopSearchBoxProps) {
+export function StopSearchBox({ onSelectStop }: StopSearchBoxProps) {
     const [query, setQuery] = useState("");
     const [isFocused, setIsFocused] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
     const { results, status } = useStopSearch(query);
 
     const handleSelect = (result: StopSearchResult) => {
-        onAddStop(result);
+        onSelectStop(result);
         setQuery("");
     };
 
@@ -40,7 +39,7 @@ export function StopSearchBox({ savedLids, onAddStop }: StopSearchBoxProps) {
                 onFocus={() => setIsFocused(true)}
             />
 
-            {isFocused && <StopSearchResults query={query} results={results} status={status} onSelect={handleSelect} savedLids={savedLids} />}
+            {isFocused && <StopSearchResults query={query} results={results} status={status} onSelect={handleSelect} />}
         </div>
     );
 }

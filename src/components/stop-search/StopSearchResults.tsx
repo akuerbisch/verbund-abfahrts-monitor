@@ -10,10 +10,9 @@ interface StopSearchResultsProps {
     results: StopSearchResult[];
     status: StopSearchStatus;
     onSelect: (result: StopSearchResult) => void;
-    savedLids: Set<string>;
 }
 
-export function StopSearchResults({ query, results, status, onSelect, savedLids }: StopSearchResultsProps) {
+export function StopSearchResults({ query, results, status, onSelect }: StopSearchResultsProps) {
     if (query.trim().length < 2) return null;
 
     return (
@@ -31,23 +30,18 @@ export function StopSearchResults({ query, results, status, onSelect, savedLids 
 
             {status === "success" && results.length > 0 && (
                 <ul className="max-h-72 overflow-y-auto py-1">
-                    {results.map((result) => {
-                        const alreadySaved = savedLids.has(result.lid);
-                        return (
-                            <li key={result.lid}>
-                                <button
-                                    type="button"
-                                    disabled={alreadySaved}
-                                    onClick={() => onSelect(result)}
-                                    className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-secondary hover:bg-primary_hover disabled:cursor-not-allowed disabled:opacity-50"
-                                >
-                                    <MarkerPin01 className="size-4 shrink-0 text-fg-quaternary" />
-                                    <span className="truncate">{result.name}</span>
-                                    {alreadySaved && <span className="ml-auto shrink-0 text-xs text-quaternary">Added</span>}
-                                </button>
-                            </li>
-                        );
-                    })}
+                    {results.map((result) => (
+                        <li key={result.lid}>
+                            <button
+                                type="button"
+                                onClick={() => onSelect(result)}
+                                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-secondary hover:bg-primary_hover"
+                            >
+                                <MarkerPin01 className="size-4 shrink-0 text-fg-quaternary" />
+                                <span className="truncate">{result.name}</span>
+                            </button>
+                        </li>
+                    ))}
                 </ul>
             )}
         </div>
