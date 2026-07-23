@@ -1,9 +1,9 @@
-import { createDepartureCard, loadCards, removeCard, updateCard } from "@/lib/storage/cards";
-import type { DepartureCardConfig } from "@/types/domain";
+import { createDepartureCard, createGitlabCard, loadCards, removeCard, updateCard } from "@/lib/storage/cards";
+import type { CardConfig } from "@/types/domain";
 
-const EMPTY_CARDS: DepartureCardConfig[] = [];
+const EMPTY_CARDS: CardConfig[] = [];
 const listeners = new Set<() => void>();
-let cache: DepartureCardConfig[] | null = null;
+let cache: CardConfig[] | null = null;
 
 function notify() {
     listeners.forEach((listener) => listener());
@@ -14,17 +14,22 @@ export function subscribe(listener: () => void) {
     return () => listeners.delete(listener);
 }
 
-export function getSnapshot(): DepartureCardConfig[] {
+export function getSnapshot(): CardConfig[] {
     if (cache === null) cache = loadCards();
     return cache;
 }
 
-export function getServerSnapshot(): DepartureCardConfig[] {
+export function getServerSnapshot(): CardConfig[] {
     return EMPTY_CARDS;
 }
 
-export function createCard() {
+export function createDeparturesCard() {
     cache = createDepartureCard();
+    notify();
+}
+
+export function createGitlabMergeRequestsCard() {
+    cache = createGitlabCard();
     notify();
 }
 

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createDepartureCard, loadCards, removeCard, updateCard } from "./cards";
+import { createDepartureCard, createGitlabCard, loadCards, removeCard, updateCard } from "./cards";
 import { CARDS_KEY } from "./storageKeys";
-import { DEFAULT_MAX_DEPARTURES_PER_LINE, DEFAULT_REFRESH_INTERVAL_SECONDS } from "@/types/domain";
+import { DEFAULT_HIDE_DRAFTS, DEFAULT_MAX_DEPARTURES_PER_LINE, DEFAULT_REFRESH_INTERVAL_SECONDS, type DepartureCardConfig } from "@/types/domain";
 
 class MemoryStorage {
     private store = new Map<string, string>();
@@ -59,7 +59,7 @@ describe("cards", () => {
         createDepartureCard();
         updateCard(first.id, { refreshIntervalSeconds: 120 });
 
-        const cards = loadCards();
+        const cards = loadCards() as DepartureCardConfig[];
         expect(cards.find((c) => c.id === first.id)?.refreshIntervalSeconds).toBe(120);
         expect(cards.find((c) => c.id !== first.id)?.refreshIntervalSeconds).toBe(DEFAULT_REFRESH_INTERVAL_SECONDS);
     });
@@ -78,7 +78,7 @@ describe("cards", () => {
 
     it("updates the line filter via patch", () => {
         const [card] = createDepartureCard();
-        const result = updateCard(card.id, { lineFilter: ["34", "58E"] });
+        const result = updateCard(card.id, { lineFilter: ["34", "58E"] }) as DepartureCardConfig[];
         expect(result[0].lineFilter).toEqual(["34", "58E"]);
     });
 
@@ -98,6 +98,38 @@ describe("cards", () => {
                     createdAt: new Date().toISOString(),
                 },
             ]),
+        );
+        expect(loadCards()).toEqual([]);
+    });
+
+    it("creates an unconfigured gitlab card with defaults", () => {
+        const result = createGitlabCard();
+        expect(result).toHaveLength(1);
+        expect(result[0]).toMatchObject({
+            type: "gitlab-merge-requests",
+            projectId: null,
+            projectName: null,
+            hideDrafts: DEFAULT_HIDE_DRAFTS,
+        });
+    });
+
+    it("allows both card types to coexist", () => {
+        createDepartureCard();
+        createGitlabCard();
+        const cards = loadCards();
+        expect(cards.map((c) => c.type).sort()).toEqual(["departures", "gitlab-merge-requests"]);
+    });
+
+    it("updates a gitlab card by id via patch", () => {
+        const [card] = createGitlabCard();
+        const result = updateCard(card.id, { projectId: 42, projectName: "shopreme/backend", hideDrafts: false });
+        expect(result[0]).toMatchObject({ projectId: 42, projectName: "shopreme/backend", hideDrafts: false });
+    });
+
+    it("rejects a stored gitlab card missing required fields", () => {
+        (globalThis as unknown as { window: { localStorage: MemoryStorage } }).window.localStorage.setItem(
+            CARDS_KEY,
+            JSON.stringify([{ id: "1", type: "gitlab-merge-requests", projectId: null, projectName: null, createdAt: new Date().toISOString() }]),
         );
         expect(loadCards()).toEqual([]);
     });

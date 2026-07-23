@@ -1,9 +1,17 @@
 "use client";
 
 import { useSyncExternalStore } from "react";
-import { createCard, deleteCard, getServerSnapshot, getSnapshot, patchCard, subscribe } from "@/lib/storage/cardsStore";
+import {
+    createDeparturesCard,
+    createGitlabMergeRequestsCard,
+    deleteCard,
+    getServerSnapshot,
+    getSnapshot,
+    patchCard,
+    subscribe,
+} from "@/lib/storage/cardsStore";
 
 export function useCards() {
     const cards = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-    return { cards, createCard, updateCard: patchCard, removeCard: deleteCard };
+    return { cards, createDeparturesCard, createGitlabMergeRequestsCard, updateCard: patchCard, removeCard: deleteCard };
 }
