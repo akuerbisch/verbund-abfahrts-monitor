@@ -13,6 +13,8 @@ function isDepartureCardConfig(value: unknown): value is DepartureCardConfig {
         typeof card.refreshIntervalSeconds === "number" &&
         typeof card.groupByLine === "boolean" &&
         typeof card.maxDeparturesPerLine === "number" &&
+        Array.isArray(card.lineFilter) &&
+        card.lineFilter.every((line) => typeof line === "string") &&
         typeof card.createdAt === "string"
     );
 }
@@ -43,6 +45,7 @@ export function createDepartureCard(): DepartureCardConfig[] {
         refreshIntervalSeconds: DEFAULT_REFRESH_INTERVAL_SECONDS,
         groupByLine: false,
         maxDeparturesPerLine: DEFAULT_MAX_DEPARTURES_PER_LINE,
+        lineFilter: [],
         createdAt: new Date().toISOString(),
     };
 

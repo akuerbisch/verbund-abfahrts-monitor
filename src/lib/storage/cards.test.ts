@@ -36,6 +36,7 @@ describe("cards", () => {
             refreshIntervalSeconds: DEFAULT_REFRESH_INTERVAL_SECONDS,
             groupByLine: false,
             maxDeparturesPerLine: DEFAULT_MAX_DEPARTURES_PER_LINE,
+            lineFilter: [],
         });
     });
 
@@ -72,6 +73,32 @@ describe("cards", () => {
 
     it("returns an empty list for corrupted storage data", () => {
         (globalThis as unknown as { window: { localStorage: MemoryStorage } }).window.localStorage.setItem(CARDS_KEY, "not json");
+        expect(loadCards()).toEqual([]);
+    });
+
+    it("updates the line filter via patch", () => {
+        const [card] = createDepartureCard();
+        const result = updateCard(card.id, { lineFilter: ["34", "58E"] });
+        expect(result[0].lineFilter).toEqual(["34", "58E"]);
+    });
+
+    it("rejects a stored card whose lineFilter isn't a string array", () => {
+        (globalThis as unknown as { window: { localStorage: MemoryStorage } }).window.localStorage.setItem(
+            CARDS_KEY,
+            JSON.stringify([
+                {
+                    id: "1",
+                    type: "departures",
+                    stopName: null,
+                    stopLid: null,
+                    refreshIntervalSeconds: DEFAULT_REFRESH_INTERVAL_SECONDS,
+                    groupByLine: false,
+                    maxDeparturesPerLine: DEFAULT_MAX_DEPARTURES_PER_LINE,
+                    lineFilter: "34",
+                    createdAt: new Date().toISOString(),
+                },
+            ]),
+        );
         expect(loadCards()).toEqual([]);
     });
 });

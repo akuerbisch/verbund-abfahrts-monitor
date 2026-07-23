@@ -8,6 +8,8 @@ export interface DepartureCardConfig {
     refreshIntervalSeconds: number;
     groupByLine: boolean;
     maxDeparturesPerLine: number;
+    /** Empty = no filter (show all lines). */
+    lineFilter: string[];
     createdAt: string;
 }
 
