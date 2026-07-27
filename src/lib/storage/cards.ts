@@ -2,12 +2,14 @@ import { safeGetItem, safeSetItem } from "@/lib/storage/safeStorage";
 import { CARDS_KEY } from "@/lib/storage/storageKeys";
 import {
     DEFAULT_HIDE_DRAFTS,
+    DEFAULT_JIRA_VERSION_SORT_ORDER,
     DEFAULT_MAX_DEPARTURES_PER_LINE,
     DEFAULT_MR_SORT_ORDER,
     DEFAULT_REFRESH_INTERVAL_SECONDS,
     type CardConfig,
     type DepartureCardConfig,
     type GitlabMergeRequestsCardConfig,
+    type JiraVersionsCardConfig,
 } from "@/types/domain";
 
 function isDepartureCardConfig(value: unknown): value is DepartureCardConfig {
@@ -41,8 +43,22 @@ function isGitlabCardConfig(value: unknown): value is GitlabMergeRequestsCardCon
     );
 }
 
+function isJiraCardConfig(value: unknown): value is JiraVersionsCardConfig {
+    if (typeof value !== "object" || value === null) return false;
+    const card = value as JiraVersionsCardConfig;
+    return (
+        typeof card.id === "string" &&
+        card.type === "jira-release-versions" &&
+        (card.projectId === null || typeof card.projectId === "string") &&
+        (card.projectKey === null || typeof card.projectKey === "string") &&
+        (card.projectName === null || typeof card.projectName === "string") &&
+        (card.sortOrder === "dueDate" || card.sortOrder === "progress" || card.sortOrder === "name") &&
+        typeof card.createdAt === "string"
+    );
+}
+
 function isCardConfig(value: unknown): value is CardConfig {
-    return isDepartureCardConfig(value) || isGitlabCardConfig(value);
+    return isDepartureCardConfig(value) || isGitlabCardConfig(value) || isJiraCardConfig(value);
 }
 
 export function loadCards(): CardConfig[] {
@@ -92,9 +108,24 @@ export function createGitlabCard(): CardConfig[] {
     return persist([...loadCards(), newCard]);
 }
 
+export function createJiraCard(): CardConfig[] {
+    const newCard: JiraVersionsCardConfig = {
+        id: crypto.randomUUID(),
+        type: "jira-release-versions",
+        projectId: null,
+        projectKey: null,
+        projectName: null,
+        sortOrder: DEFAULT_JIRA_VERSION_SORT_ORDER,
+        createdAt: new Date().toISOString(),
+    };
+
+    return persist([...loadCards(), newCard]);
+}
+
 export type DepartureCardPatch = Partial<Omit<DepartureCardConfig, "id" | "type" | "createdAt">>;
 export type GitlabCardPatch = Partial<Omit<GitlabMergeRequestsCardConfig, "id" | "type" | "createdAt">>;
-export type CardConfigPatch = DepartureCardPatch | GitlabCardPatch;
+export type JiraCardPatch = Partial<Omit<JiraVersionsCardConfig, "id" | "type" | "createdAt">>;
+export type CardConfigPatch = DepartureCardPatch | GitlabCardPatch | JiraCardPatch;
 
 export function updateCard(id: string, patch: CardConfigPatch): CardConfig[] {
     // Callers pass a patch shaped for the card's actual type; the merge itself is type-agnostic.

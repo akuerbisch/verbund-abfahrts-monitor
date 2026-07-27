@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react";
 import {
     createDeparturesCard,
     createGitlabMergeRequestsCard,
+    createJiraVersionsCard,
     deleteCard,
     getServerSnapshot,
     getSnapshot,
@@ -14,5 +15,13 @@ import {
 
 export function useCards() {
     const cards = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-    return { cards, createDeparturesCard, createGitlabMergeRequestsCard, updateCard: patchCard, removeCard: deleteCard, reorderCards: reorder };
+    return {
+        cards,
+        createDeparturesCard,
+        createGitlabMergeRequestsCard,
+        createJiraVersionsCard,
+        updateCard: patchCard,
+        removeCard: deleteCard,
+        reorderCards: reorder,
+    };
 }

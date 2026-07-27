@@ -1,8 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createDepartureCard, createGitlabCard, loadCards, removeCard, reorderCards, updateCard } from "./cards";
+import { createDepartureCard, createGitlabCard, createJiraCard, loadCards, removeCard, reorderCards, updateCard } from "./cards";
 import { CARDS_KEY } from "./storageKeys";
 import {
     DEFAULT_HIDE_DRAFTS,
+    DEFAULT_JIRA_VERSION_SORT_ORDER,
     DEFAULT_MAX_DEPARTURES_PER_LINE,
     DEFAULT_MR_SORT_ORDER,
     DEFAULT_REFRESH_INTERVAL_SECONDS,
@@ -120,11 +121,12 @@ describe("cards", () => {
         });
     });
 
-    it("allows both card types to coexist", () => {
+    it("allows all three card types to coexist", () => {
         createDepartureCard();
         createGitlabCard();
+        createJiraCard();
         const cards = loadCards();
-        expect(cards.map((c) => c.type).sort()).toEqual(["departures", "gitlab-merge-requests"]);
+        expect(cards.map((c) => c.type).sort()).toEqual(["departures", "gitlab-merge-requests", "jira-release-versions"]);
     });
 
     it("updates a gitlab card by id via patch", () => {
@@ -139,6 +141,38 @@ describe("cards", () => {
         expect(result[0]).toMatchObject({ sortOrder: "newest" });
     });
 
+    it("creates an unconfigured jira card with defaults", () => {
+        const result = createJiraCard();
+        expect(result).toHaveLength(1);
+        expect(result[0]).toMatchObject({
+            type: "jira-release-versions",
+            projectId: null,
+            projectKey: null,
+            projectName: null,
+            sortOrder: DEFAULT_JIRA_VERSION_SORT_ORDER,
+        });
+    });
+
+    it("updates a jira card by id via patch", () => {
+        const [card] = createJiraCard();
+        const result = updateCard(card.id, { projectId: "10000", projectKey: "ABC", projectName: "Alphabet Corp" });
+        expect(result[0]).toMatchObject({ projectId: "10000", projectKey: "ABC", projectName: "Alphabet Corp" });
+    });
+
+    it("updates a jira card's sort order via patch", () => {
+        const [card] = createJiraCard();
+        const result = updateCard(card.id, { sortOrder: "progress" });
+        expect(result[0]).toMatchObject({ sortOrder: "progress" });
+    });
+
+    it("rejects a stored jira card missing required fields", () => {
+        (globalThis as unknown as { window: { localStorage: MemoryStorage } }).window.localStorage.setItem(
+            CARDS_KEY,
+            JSON.stringify([{ id: "1", type: "jira-release-versions", projectId: null, projectName: null, createdAt: new Date().toISOString() }]),
+        );
+        expect(loadCards()).toEqual([]);
+    });
+
     it("reorders cards to match the given id order", () => {
         const [first] = createDepartureCard();
         createDepartureCard();
@@ -149,6 +183,16 @@ describe("cards", () => {
 
         expect(result.map((c) => c.id)).toEqual([third.id, first.id, second.id]);
         expect(loadCards().map((c) => c.id)).toEqual([third.id, first.id, second.id]);
+    });
+
+    it("reorders cards including a jira card in the mix", () => {
+        const [first] = createDepartureCard();
+        createJiraCard();
+        const [, second] = loadCards();
+
+        const result = reorderCards([second.id, first.id]);
+
+        expect(result.map((c) => c.id)).toEqual([second.id, first.id]);
     });
 
     it("appends cards missing from the given order at the end, keeping their relative order", () => {

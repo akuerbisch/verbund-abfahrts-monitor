@@ -1,4 +1,4 @@
-export type CardType = "departures" | "gitlab-merge-requests";
+export type CardType = "departures" | "gitlab-merge-requests" | "jira-release-versions";
 
 export interface DepartureCardConfig {
     id: string;
@@ -25,7 +25,19 @@ export interface GitlabMergeRequestsCardConfig {
     createdAt: string;
 }
 
-export type CardConfig = DepartureCardConfig | GitlabMergeRequestsCardConfig;
+export type JiraVersionSortOrder = "dueDate" | "progress" | "name";
+
+export interface JiraVersionsCardConfig {
+    id: string;
+    type: "jira-release-versions";
+    projectId: string | null;
+    projectKey: string | null;
+    projectName: string | null;
+    sortOrder: JiraVersionSortOrder;
+    createdAt: string;
+}
+
+export type CardConfig = DepartureCardConfig | GitlabMergeRequestsCardConfig | JiraVersionsCardConfig;
 
 export const DEFAULT_REFRESH_INTERVAL_SECONDS = 60;
 export const REFRESH_INTERVAL_OPTIONS = [15, 30, 60, 120, 300] as const;
@@ -39,4 +51,11 @@ export const DEFAULT_MR_SORT_ORDER: MergeRequestSortOrder = "oldest";
 export const MR_SORT_ORDER_OPTIONS: { value: MergeRequestSortOrder; label: string }[] = [
     { value: "oldest", label: "Oldest first" },
     { value: "newest", label: "Newest first" },
+];
+
+export const DEFAULT_JIRA_VERSION_SORT_ORDER: JiraVersionSortOrder = "dueDate";
+export const JIRA_VERSION_SORT_ORDER_OPTIONS: { value: JiraVersionSortOrder; label: string }[] = [
+    { value: "dueDate", label: "Due date (soonest first)" },
+    { value: "progress", label: "Progress (least complete first)" },
+    { value: "name", label: "Name (A–Z)" },
 ];
