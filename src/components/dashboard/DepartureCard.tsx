@@ -57,18 +57,20 @@ export function DepartureCard({ card, onUpdate, onRemove }: DepartureCardProps) 
                 </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto">
-                {isChangingStop ? (
-                    <div className="mt-4 flex items-start gap-2">
-                        <StopSearchBox
-                            onSelectStop={(result) => {
-                                onUpdate({ stopName: result.name, stopLid: result.lid, lineFilter: [] });
-                                setIsChangingStop(false);
-                            }}
-                        />
-                        {card.stopLid && <ButtonUtility icon={X} tooltip="Cancel" size="sm" color="tertiary" onClick={() => setIsChangingStop(false)} />}
-                    </div>
-                ) : (
+            {isChangingStop ? (
+                // Not wrapped in the scrollable region below — the search dropdown is
+                // absolutely positioned and would get clipped by overflow-y-auto.
+                <div className="mt-4 flex items-start gap-2">
+                    <StopSearchBox
+                        onSelectStop={(result) => {
+                            onUpdate({ stopName: result.name, stopLid: result.lid, lineFilter: [] });
+                            setIsChangingStop(false);
+                        }}
+                    />
+                    {card.stopLid && <ButtonUtility icon={X} tooltip="Cancel" size="sm" color="tertiary" onClick={() => setIsChangingStop(false)} />}
+                </div>
+            ) : (
+                <div className="min-h-0 flex-1 overflow-y-auto">
                     <>
                         {isSettingsOpen && (
                             <div className="mt-4 flex flex-col gap-4 border-b border-secondary pb-4">
@@ -146,8 +148,8 @@ export function DepartureCard({ card, onUpdate, onRemove }: DepartureCardProps) 
                             </>
                         )}
                     </>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }

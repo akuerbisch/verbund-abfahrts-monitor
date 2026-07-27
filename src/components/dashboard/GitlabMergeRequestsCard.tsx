@@ -48,18 +48,20 @@ export function GitlabMergeRequestsCard({ card, onUpdate, onRemove }: GitlabMerg
                 </div>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto">
-                {isChangingProject ? (
-                    <div className="mt-4 flex items-start gap-2">
-                        <GitlabProjectSearchBox
-                            onSelectProject={(project) => {
-                                onUpdate({ projectId: project.id, projectName: project.pathWithNamespace });
-                                setIsChangingProject(false);
-                            }}
-                        />
-                        {card.projectId && <ButtonUtility icon={X} tooltip="Cancel" size="sm" color="tertiary" onClick={() => setIsChangingProject(false)} />}
-                    </div>
-                ) : (
+            {isChangingProject ? (
+                // Not wrapped in the scrollable region below — the search dropdown is
+                // absolutely positioned and would get clipped by overflow-y-auto.
+                <div className="mt-4 flex items-start gap-2">
+                    <GitlabProjectSearchBox
+                        onSelectProject={(project) => {
+                            onUpdate({ projectId: project.id, projectName: project.pathWithNamespace });
+                            setIsChangingProject(false);
+                        }}
+                    />
+                    {card.projectId && <ButtonUtility icon={X} tooltip="Cancel" size="sm" color="tertiary" onClick={() => setIsChangingProject(false)} />}
+                </div>
+            ) : (
+                <div className="min-h-0 flex-1 overflow-y-auto">
                     <>
                         {isSettingsOpen && (
                             <div className="mt-4 flex flex-col gap-4 border-b border-secondary pb-4">
@@ -95,8 +97,8 @@ export function GitlabMergeRequestsCard({ card, onUpdate, onRemove }: GitlabMerg
                             </>
                         )}
                     </>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }
