@@ -22,6 +22,14 @@ function getJiraBaseUrl(): string {
     return process.env.JIRA_BASE_URL || DEFAULT_JIRA_BASE_URL;
 }
 
+function getJiraEmail(): string {
+    const email = process.env.JIRA_EMAIL;
+    if (!email) {
+        throw new JiraUpstreamError("JIRA_EMAIL is not configured on the server");
+    }
+    return email;
+}
+
 function getJiraToken(): string {
     const token = process.env.JIRA_TOKEN;
     if (!token) {
@@ -33,13 +41,13 @@ function getJiraToken(): string {
 let cachedCloudId: string | null = null;
 
 /**
- * A Jira API token *with scopes* isn't authenticated with Basic auth against
- * the site domain — Atlassian routes those through the API gateway instead,
- * keyed by the site's cloud id rather than its hostname (using Basic auth
- * against the site domain doesn't error, it just silently falls through to
- * an unauthenticated context that can't see any project). The cloud id is
- * public, unauthenticated site metadata, so it's resolved once per server
- * instance and cached rather than re-fetched on every call.
+ * A Jira API token *with scopes* isn't accepted against the site domain at
+ * all (confirmed: it silently falls through to an unauthenticated context
+ * that can't see any project, rather than erroring) — it must be sent to
+ * the API gateway instead, keyed by the site's cloud id rather than its
+ * hostname. The cloud id is public, unauthenticated site metadata, so it's
+ * resolved once per server instance and cached rather than re-fetched on
+ * every call.
  */
 async function getJiraCloudId(signal: AbortSignal): Promise<string> {
     if (cachedCloudId) return cachedCloudId;
@@ -61,9 +69,11 @@ async function getJiraCloudId(signal: AbortSignal): Promise<string> {
 /**
  * Calls the Jira Cloud REST API v3 server-side, via the api.atlassian.com
  * gateway (required for scoped API tokens) rather than the site domain
- * directly. The token is read fresh on every call (never cached at module
- * load) and sent as a Bearer token — never forwarded to the client, which
- * only ever talks to our own /api/jira/* routes.
+ * directly. Email + token are read fresh on every call (never cached at
+ * module load) and sent as HTTP Basic auth (base64 "email:token") — the
+ * gateway rejects a bare Bearer token for this kind of token outright.
+ * Never forwarded to the client, which only ever talks to our own
+ * /api/jira/* routes.
  */
 export async function callJiraApi(path: string, searchParams?: Record<string, string>, timeoutMs = 8000): Promise<unknown> {
     const controller = new AbortController();
@@ -77,8 +87,9 @@ export async function callJiraApi(path: string, searchParams?: Record<string, st
             url.searchParams.set(key, value);
         }
 
+        const credentials = Buffer.from(`${getJiraEmail()}:${getJiraToken()}`).toString("base64");
         const response = await fetch(url, {
-            headers: { Authorization: `Bearer ${getJiraToken()}`, Accept: "application/json" },
+            headers: { Authorization: `Basic ${credentials}`, Accept: "application/json" },
             signal: controller.signal,
         });
 
