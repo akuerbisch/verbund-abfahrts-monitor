@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Flag01, Settings01, Trash01, X } from "@untitledui/icons";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { CARD_MAX_HEIGHT_CLASS } from "@/components/dashboard/cardLayout";
@@ -12,6 +12,7 @@ import { VersionRow } from "@/components/dashboard/VersionRow";
 import { JiraVersionSortOrderControl } from "@/components/settings/JiraVersionSortOrderControl";
 import { useJiraVersions } from "@/hooks/useJiraVersions";
 import { sortJiraVersions } from "@/lib/jira/parseVersions";
+import { showToast } from "@/lib/toast/toastStore";
 import type { JiraVersionsCardConfig } from "@/types/domain";
 
 interface JiraVersionsCardProps {
@@ -29,6 +30,18 @@ export function JiraVersionsCard({ card, dragHandleProps, onUpdate, onRemove }: 
     // The API route already filters to unreleased versions and pre-sorts by
     // the default order — re-sort client-side to honor the card's own setting.
     const visibleVersions = sortJiraVersions(versions, card.sortOrder);
+
+    useEffect(() => {
+        if (status === "error") {
+            showToast({ variant: "error", title: "Couldn't load release versions", description: card.projectName ?? undefined });
+        } else if (status === "stale-error") {
+            showToast({
+                variant: "warning",
+                title: "Live update failed",
+                description: card.projectName ? `Showing last known versions for ${card.projectName}` : "Showing last known versions",
+            });
+        }
+    }, [status, card.projectName]);
 
     const openChangeProject = () => {
         setIsChangingProject(true);

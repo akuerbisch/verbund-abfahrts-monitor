@@ -2,6 +2,7 @@
 
 import { AppHeader } from "@/components/dashboard/AppHeader";
 import { Dashboard } from "@/components/dashboard/Dashboard";
+import { ToastViewport } from "@/components/base/toast/ToastViewport";
 import { useCards } from "@/hooks/useCards";
 
 export function DashboardShell() {
@@ -22,6 +23,8 @@ export function DashboardShell() {
                     onReorderCards={reorderCards}
                 />
             </main>
+
+            <ToastViewport />
         </div>
     );
 }

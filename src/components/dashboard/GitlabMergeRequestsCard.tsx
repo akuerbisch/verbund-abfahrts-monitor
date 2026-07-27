@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GitBranch01, Settings01, Trash01, X } from "@untitledui/icons";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { Toggle } from "@/components/base/toggle/toggle";
@@ -13,6 +13,7 @@ import { MergeRequestRow } from "@/components/dashboard/MergeRequestRow";
 import { MrSortOrderControl } from "@/components/settings/MrSortOrderControl";
 import { useGitlabMergeRequests } from "@/hooks/useGitlabMergeRequests";
 import { filterDraftMergeRequests, sortMergeRequestsByAge } from "@/lib/gitlab/parseMergeRequests";
+import { showToast } from "@/lib/toast/toastStore";
 import type { GitlabMergeRequestsCardConfig } from "@/types/domain";
 
 interface GitlabMergeRequestsCardProps {
@@ -30,6 +31,18 @@ export function GitlabMergeRequestsCard({ card, dragHandleProps, onUpdate, onRem
     const visibleMergeRequests = sortMergeRequestsByAge(filterDraftMergeRequests(mergeRequests, card.hideDrafts), card.sortOrder);
     // projectName is stored as the full "group/repo" path — only the repo name belongs in the header.
     const repoName = card.projectName?.split("/").pop() ?? null;
+
+    useEffect(() => {
+        if (status === "error") {
+            showToast({ variant: "error", title: "Couldn't load merge requests", description: repoName ?? undefined });
+        } else if (status === "stale-error") {
+            showToast({
+                variant: "warning",
+                title: "Live update failed",
+                description: repoName ? `Showing last known merge requests for ${repoName}` : "Showing last known merge requests",
+            });
+        }
+    }, [status, repoName]);
 
     const openChangeProject = () => {
         setIsChangingProject(true);

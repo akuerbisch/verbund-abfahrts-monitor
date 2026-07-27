@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MarkerPin01, Settings01, Trash01, X } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
@@ -15,6 +15,7 @@ import { MaxDeparturesPerLineControl } from "@/components/settings/MaxDepartures
 import { RefreshIntervalControl } from "@/components/settings/RefreshIntervalControl";
 import { StopSearchBox } from "@/components/stop-search/StopSearchBox";
 import { useStationBoard } from "@/hooks/useStationBoard";
+import { showToast } from "@/lib/toast/toastStore";
 import { filterDeparturesByLine } from "@/lib/vao/filterDepartures";
 import { groupDeparturesByLine } from "@/lib/vao/groupDepartures";
 import type { DepartureCardConfig } from "@/types/domain";
@@ -32,6 +33,18 @@ export function DepartureCard({ card, dragHandleProps, onUpdate, onRemove }: Dep
 
     const stop = card.stopName && card.stopLid ? { name: card.stopName, lid: card.stopLid } : null;
     const { departures, status } = useStationBoard(stop, card.refreshIntervalSeconds);
+
+    useEffect(() => {
+        if (status === "error") {
+            showToast({ variant: "error", title: "Couldn't load departures", description: card.stopName ?? undefined });
+        } else if (status === "stale-error") {
+            showToast({
+                variant: "warning",
+                title: "Live update failed",
+                description: card.stopName ? `Showing last known departures for ${card.stopName}` : "Showing last known departures",
+            });
+        }
+    }, [status, card.stopName]);
 
     const availableLines = Array.from(new Set(departures.map((departure) => departure.line))).sort();
     const filteredDepartures = filterDeparturesByLine(departures, card.lineFilter);
