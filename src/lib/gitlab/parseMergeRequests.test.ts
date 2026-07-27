@@ -56,11 +56,25 @@ describe("parseMergeRequest", () => {
 });
 
 describe("sortMergeRequestsByAge", () => {
-    it("sorts oldest first", () => {
+    it("sorts oldest first by default", () => {
         const older = parseMergeRequest(mrRaw({ id: 1, created_at: "2026-06-01T00:00:00.000Z" }), {})!;
         const newer = parseMergeRequest(mrRaw({ id: 2, created_at: "2026-07-01T00:00:00.000Z" }), {})!;
 
         expect(sortMergeRequestsByAge([newer, older])).toEqual([older, newer]);
+    });
+
+    it("sorts oldest first when explicitly requested", () => {
+        const older = parseMergeRequest(mrRaw({ id: 1, created_at: "2026-06-01T00:00:00.000Z" }), {})!;
+        const newer = parseMergeRequest(mrRaw({ id: 2, created_at: "2026-07-01T00:00:00.000Z" }), {})!;
+
+        expect(sortMergeRequestsByAge([newer, older], "oldest")).toEqual([older, newer]);
+    });
+
+    it("sorts newest first when requested", () => {
+        const older = parseMergeRequest(mrRaw({ id: 1, created_at: "2026-06-01T00:00:00.000Z" }), {})!;
+        const newer = parseMergeRequest(mrRaw({ id: 2, created_at: "2026-07-01T00:00:00.000Z" }), {})!;
+
+        expect(sortMergeRequestsByAge([older, newer], "newest")).toEqual([newer, older]);
     });
 });
 

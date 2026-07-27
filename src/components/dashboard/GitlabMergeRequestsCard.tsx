@@ -8,8 +8,9 @@ import { CARD_MAX_HEIGHT_CLASS } from "@/components/dashboard/cardLayout";
 import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
 import { GitlabProjectSearchBox } from "@/components/gitlab/GitlabProjectSearchBox";
 import { MergeRequestRow } from "@/components/dashboard/MergeRequestRow";
+import { MrSortOrderControl } from "@/components/settings/MrSortOrderControl";
 import { useGitlabMergeRequests } from "@/hooks/useGitlabMergeRequests";
-import { filterDraftMergeRequests } from "@/lib/gitlab/parseMergeRequests";
+import { filterDraftMergeRequests, sortMergeRequestsByAge } from "@/lib/gitlab/parseMergeRequests";
 import type { GitlabMergeRequestsCardConfig } from "@/types/domain";
 
 interface GitlabMergeRequestsCardProps {
@@ -23,7 +24,7 @@ export function GitlabMergeRequestsCard({ card, onUpdate, onRemove }: GitlabMerg
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const { mergeRequests, status } = useGitlabMergeRequests(card.projectId);
-    const visibleMergeRequests = filterDraftMergeRequests(mergeRequests, card.hideDrafts);
+    const visibleMergeRequests = sortMergeRequestsByAge(filterDraftMergeRequests(mergeRequests, card.hideDrafts), card.sortOrder);
 
     const openChangeProject = () => {
         setIsChangingProject(true);
@@ -65,7 +66,10 @@ export function GitlabMergeRequestsCard({ card, onUpdate, onRemove }: GitlabMerg
                     <>
                         {isSettingsOpen && (
                             <div className="mt-4 flex flex-col gap-4 border-b border-secondary pb-4">
-                                <Toggle label="Hide draft MRs" isSelected={card.hideDrafts} onChange={(hideDrafts) => onUpdate({ hideDrafts })} />
+                                <div className="flex flex-wrap items-center gap-4">
+                                    <MrSortOrderControl sortOrder={card.sortOrder} onChange={(sortOrder) => onUpdate({ sortOrder })} />
+                                    <Toggle label="Hide draft MRs" isSelected={card.hideDrafts} onChange={(hideDrafts) => onUpdate({ hideDrafts })} />
+                                </div>
                             </div>
                         )}
 

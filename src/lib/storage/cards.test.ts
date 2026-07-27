@@ -1,7 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createDepartureCard, createGitlabCard, loadCards, removeCard, updateCard } from "./cards";
 import { CARDS_KEY } from "./storageKeys";
-import { DEFAULT_HIDE_DRAFTS, DEFAULT_MAX_DEPARTURES_PER_LINE, DEFAULT_REFRESH_INTERVAL_SECONDS, type DepartureCardConfig } from "@/types/domain";
+import {
+    DEFAULT_HIDE_DRAFTS,
+    DEFAULT_MAX_DEPARTURES_PER_LINE,
+    DEFAULT_MR_SORT_ORDER,
+    DEFAULT_REFRESH_INTERVAL_SECONDS,
+    type DepartureCardConfig,
+} from "@/types/domain";
 
 class MemoryStorage {
     private store = new Map<string, string>();
@@ -110,6 +116,7 @@ describe("cards", () => {
             projectId: null,
             projectName: null,
             hideDrafts: DEFAULT_HIDE_DRAFTS,
+            sortOrder: DEFAULT_MR_SORT_ORDER,
         });
     });
 
@@ -124,6 +131,12 @@ describe("cards", () => {
         const [card] = createGitlabCard();
         const result = updateCard(card.id, { projectId: 42, projectName: "shopreme/backend", hideDrafts: false });
         expect(result[0]).toMatchObject({ projectId: 42, projectName: "shopreme/backend", hideDrafts: false });
+    });
+
+    it("updates a gitlab card's sort order via patch", () => {
+        const [card] = createGitlabCard();
+        const result = updateCard(card.id, { sortOrder: "newest" });
+        expect(result[0]).toMatchObject({ sortOrder: "newest" });
     });
 
     it("rejects a stored gitlab card missing required fields", () => {

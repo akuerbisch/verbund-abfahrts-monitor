@@ -41,9 +41,12 @@ export function parseMergeRequest(raw: unknown, approvalsRaw: unknown): ParsedMe
     return { id, iid, title, webUrl, author: { name: authorName, avatarUrl }, createdAt, isDraft, approved, approvalsLeft };
 }
 
-/** Oldest-first — the merge request open the longest appears first. */
-export function sortMergeRequestsByAge(mergeRequests: ParsedMergeRequest[]): ParsedMergeRequest[] {
-    return [...mergeRequests].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+export type MergeRequestSortOrder = "oldest" | "newest";
+
+/** "oldest": the merge request open the longest appears first (default). */
+export function sortMergeRequestsByAge(mergeRequests: ParsedMergeRequest[], order: MergeRequestSortOrder = "oldest"): ParsedMergeRequest[] {
+    const sorted = [...mergeRequests].sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    return order === "newest" ? sorted.reverse() : sorted;
 }
 
 export function filterDraftMergeRequests(mergeRequests: ParsedMergeRequest[], hideDrafts: boolean): ParsedMergeRequest[] {

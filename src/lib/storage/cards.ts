@@ -3,6 +3,7 @@ import { CARDS_KEY } from "@/lib/storage/storageKeys";
 import {
     DEFAULT_HIDE_DRAFTS,
     DEFAULT_MAX_DEPARTURES_PER_LINE,
+    DEFAULT_MR_SORT_ORDER,
     DEFAULT_REFRESH_INTERVAL_SECONDS,
     type CardConfig,
     type DepartureCardConfig,
@@ -35,6 +36,7 @@ function isGitlabCardConfig(value: unknown): value is GitlabMergeRequestsCardCon
         (card.projectId === null || typeof card.projectId === "number") &&
         (card.projectName === null || typeof card.projectName === "string") &&
         typeof card.hideDrafts === "boolean" &&
+        (card.sortOrder === "oldest" || card.sortOrder === "newest") &&
         typeof card.createdAt === "string"
     );
 }
@@ -83,6 +85,7 @@ export function createGitlabCard(): CardConfig[] {
         projectId: null,
         projectName: null,
         hideDrafts: DEFAULT_HIDE_DRAFTS,
+        sortOrder: DEFAULT_MR_SORT_ORDER,
         createdAt: new Date().toISOString(),
     };
 
