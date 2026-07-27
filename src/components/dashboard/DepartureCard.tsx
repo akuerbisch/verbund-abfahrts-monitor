@@ -5,6 +5,7 @@ import { MarkerPin01, Settings01, Trash01, X } from "@untitledui/icons";
 import { Badge } from "@/components/base/badges/badges";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { Toggle } from "@/components/base/toggle/toggle";
+import { CARD_MAX_HEIGHT_CLASS } from "@/components/dashboard/cardLayout";
 import { DepartureRow } from "@/components/dashboard/DepartureRow";
 import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
 import { LineFilterControl } from "@/components/settings/LineFilterControl";
@@ -44,8 +45,8 @@ export function DepartureCard({ card, onUpdate, onRemove }: DepartureCardProps) 
     };
 
     return (
-        <div className="flex flex-col rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary_alt">
-            <div className="flex items-center justify-between gap-2">
+        <div className={`flex flex-col rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary_alt ${CARD_MAX_HEIGHT_CLASS}`}>
+            <div className="flex shrink-0 items-center justify-between gap-2">
                 <h2 className="truncate text-md font-semibold text-primary">{card.stopName ?? "New departures card"}</h2>
                 <div className="flex shrink-0 items-center gap-1">
                     {!isChangingStop && <ButtonUtility icon={MarkerPin01} tooltip="Change stop" size="sm" color="tertiary" onClick={openChangeStop} />}
@@ -56,93 +57,97 @@ export function DepartureCard({ card, onUpdate, onRemove }: DepartureCardProps) 
                 </div>
             </div>
 
-            {isChangingStop ? (
-                <div className="mt-4 flex items-start gap-2">
-                    <StopSearchBox
-                        onSelectStop={(result) => {
-                            onUpdate({ stopName: result.name, stopLid: result.lid, lineFilter: [] });
-                            setIsChangingStop(false);
-                        }}
-                    />
-                    {card.stopLid && <ButtonUtility icon={X} tooltip="Cancel" size="sm" color="tertiary" onClick={() => setIsChangingStop(false)} />}
-                </div>
-            ) : (
-                <>
-                    {isSettingsOpen && (
-                        <div className="mt-4 flex flex-col gap-4 border-b border-secondary pb-4">
-                            <div className="flex flex-wrap items-center gap-4">
-                                <RefreshIntervalControl
-                                    refreshIntervalSeconds={card.refreshIntervalSeconds}
-                                    onChange={(seconds) => onUpdate({ refreshIntervalSeconds: seconds })}
-                                />
-                                <Toggle label="Group by line" isSelected={card.groupByLine} onChange={(groupByLine) => onUpdate({ groupByLine })} />
-                                {card.groupByLine && (
-                                    <MaxDeparturesPerLineControl
-                                        maxDeparturesPerLine={card.maxDeparturesPerLine}
-                                        onChange={(count) => onUpdate({ maxDeparturesPerLine: count })}
+            <div className="min-h-0 flex-1 overflow-y-auto">
+                {isChangingStop ? (
+                    <div className="mt-4 flex items-start gap-2">
+                        <StopSearchBox
+                            onSelectStop={(result) => {
+                                onUpdate({ stopName: result.name, stopLid: result.lid, lineFilter: [] });
+                                setIsChangingStop(false);
+                            }}
+                        />
+                        {card.stopLid && <ButtonUtility icon={X} tooltip="Cancel" size="sm" color="tertiary" onClick={() => setIsChangingStop(false)} />}
+                    </div>
+                ) : (
+                    <>
+                        {isSettingsOpen && (
+                            <div className="mt-4 flex flex-col gap-4 border-b border-secondary pb-4">
+                                <div className="flex flex-wrap items-center gap-4">
+                                    <RefreshIntervalControl
+                                        refreshIntervalSeconds={card.refreshIntervalSeconds}
+                                        onChange={(seconds) => onUpdate({ refreshIntervalSeconds: seconds })}
                                     />
-                                )}
-                            </div>
-                            <LineFilterControl
-                                availableLines={availableLines}
-                                selectedLines={card.lineFilter}
-                                onChange={(lineFilter) => onUpdate({ lineFilter })}
-                            />
-                        </div>
-                    )}
-
-                    {status === "unconfigured" && <p className="py-6 text-sm text-tertiary">Select a stop to start showing departures.</p>}
-
-                    {status === "loading" && (
-                        <div className="flex items-center justify-center py-8">
-                            <LoadingIndicator size="sm" />
-                        </div>
-                    )}
-
-                    {status === "error" && <p className="py-6 text-sm text-error-primary">Couldn&apos;t load departures for this stop right now.</p>}
-
-                    {(status === "success" || status === "stale-error") && (
-                        <>
-                            {status === "stale-error" && <p className="mt-2 text-xs text-warning-primary">Showing last known departures — live update failed.</p>}
-
-                            {filteredDepartures.length === 0 ? (
-                                <p className="py-6 text-sm text-tertiary">No upcoming departures.</p>
-                            ) : groups ? (
-                                <div className="mt-2 flex flex-col divide-y divide-secondary">
-                                    {groups.map((group) => (
-                                        <div key={group.line} className="py-3">
-                                            <Badge color="brand" size="md">
-                                                {group.line}
-                                            </Badge>
-                                            <div className="mt-1 grid grid-cols-2 gap-x-4">
-                                                {group.directionGroups.map((directionGroup) => (
-                                                    <div
-                                                        key={directionGroup.direction}
-                                                        className={group.directionGroups.length === 1 ? "col-span-2" : "min-w-0"}
-                                                    >
-                                                        <p className="truncate text-xs font-medium text-tertiary">{directionGroup.direction}</p>
-                                                        <ul className="divide-y divide-secondary">
-                                                            {directionGroup.departures.map((departure, index) => (
-                                                                <DepartureRow key={index} departure={departure} hideLine hideDirection />
-                                                            ))}
-                                                        </ul>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    ))}
+                                    <Toggle label="Group by line" isSelected={card.groupByLine} onChange={(groupByLine) => onUpdate({ groupByLine })} />
+                                    {card.groupByLine && (
+                                        <MaxDeparturesPerLineControl
+                                            maxDeparturesPerLine={card.maxDeparturesPerLine}
+                                            onChange={(count) => onUpdate({ maxDeparturesPerLine: count })}
+                                        />
+                                    )}
                                 </div>
-                            ) : (
-                                <ul className="mt-2 divide-y divide-secondary">
-                                    {filteredDepartures.map((departure, index) => (
-                                        <DepartureRow key={`${departure.line}-${departure.direction}-${index}`} departure={departure} />
-                                    ))}
-                                </ul>
-                            )}
-                        </>
-                    )}
-                </>
-            )}
+                                <LineFilterControl
+                                    availableLines={availableLines}
+                                    selectedLines={card.lineFilter}
+                                    onChange={(lineFilter) => onUpdate({ lineFilter })}
+                                />
+                            </div>
+                        )}
+
+                        {status === "unconfigured" && <p className="py-6 text-sm text-tertiary">Select a stop to start showing departures.</p>}
+
+                        {status === "loading" && (
+                            <div className="flex items-center justify-center py-8">
+                                <LoadingIndicator size="sm" />
+                            </div>
+                        )}
+
+                        {status === "error" && <p className="py-6 text-sm text-error-primary">Couldn&apos;t load departures for this stop right now.</p>}
+
+                        {(status === "success" || status === "stale-error") && (
+                            <>
+                                {status === "stale-error" && (
+                                    <p className="mt-2 text-xs text-warning-primary">Showing last known departures — live update failed.</p>
+                                )}
+
+                                {filteredDepartures.length === 0 ? (
+                                    <p className="py-6 text-sm text-tertiary">No upcoming departures.</p>
+                                ) : groups ? (
+                                    <div className="mt-2 flex flex-col divide-y divide-secondary">
+                                        {groups.map((group) => (
+                                            <div key={group.line} className="py-3">
+                                                <Badge color="brand" size="md">
+                                                    {group.line}
+                                                </Badge>
+                                                <div className="mt-1 grid grid-cols-2 gap-x-4">
+                                                    {group.directionGroups.map((directionGroup) => (
+                                                        <div
+                                                            key={directionGroup.direction}
+                                                            className={group.directionGroups.length === 1 ? "col-span-2" : "min-w-0"}
+                                                        >
+                                                            <p className="truncate text-xs font-medium text-tertiary">{directionGroup.direction}</p>
+                                                            <ul className="divide-y divide-secondary">
+                                                                {directionGroup.departures.map((departure, index) => (
+                                                                    <DepartureRow key={index} departure={departure} hideLine hideDirection />
+                                                                ))}
+                                                            </ul>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <ul className="mt-2 divide-y divide-secondary">
+                                        {filteredDepartures.map((departure, index) => (
+                                            <DepartureRow key={`${departure.line}-${departure.direction}-${index}`} departure={departure} />
+                                        ))}
+                                    </ul>
+                                )}
+                            </>
+                        )}
+                    </>
+                )}
+            </div>
         </div>
     );
 }
