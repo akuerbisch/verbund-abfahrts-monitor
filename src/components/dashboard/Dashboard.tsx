@@ -43,15 +43,23 @@ export function Dashboard({ cards, onCreateDeparturesCard, onCreateGitlabCard, o
                     <SortableContext items={cards.map((card) => card.id)} strategy={rectSwappingStrategy}>
                         {cards.map((card) => (
                             <SortableCard key={card.id} id={card.id}>
-                                {card.type === "departures" ? (
-                                    <DepartureCard card={card} onUpdate={(patch) => onUpdateCard(card.id, patch)} onRemove={() => onRemoveCard(card.id)} />
-                                ) : (
-                                    <GitlabMergeRequestsCard
-                                        card={card}
-                                        onUpdate={(patch) => onUpdateCard(card.id, patch)}
-                                        onRemove={() => onRemoveCard(card.id)}
-                                    />
-                                )}
+                                {(dragHandleProps) =>
+                                    card.type === "departures" ? (
+                                        <DepartureCard
+                                            card={card}
+                                            dragHandleProps={dragHandleProps}
+                                            onUpdate={(patch) => onUpdateCard(card.id, patch)}
+                                            onRemove={() => onRemoveCard(card.id)}
+                                        />
+                                    ) : (
+                                        <GitlabMergeRequestsCard
+                                            card={card}
+                                            dragHandleProps={dragHandleProps}
+                                            onUpdate={(patch) => onUpdateCard(card.id, patch)}
+                                            onRemove={() => onRemoveCard(card.id)}
+                                        />
+                                    )
+                                }
                             </SortableCard>
                         ))}
                     </SortableContext>

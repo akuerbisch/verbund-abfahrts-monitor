@@ -7,6 +7,8 @@ import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { Toggle } from "@/components/base/toggle/toggle";
 import { CARD_MAX_HEIGHT_CLASS } from "@/components/dashboard/cardLayout";
 import { DepartureRow } from "@/components/dashboard/DepartureRow";
+import { DragHandle } from "@/components/dashboard/DragHandle";
+import type { DragHandleProps } from "@/components/dashboard/SortableCard";
 import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
 import { LineFilterControl } from "@/components/settings/LineFilterControl";
 import { MaxDeparturesPerLineControl } from "@/components/settings/MaxDeparturesPerLineControl";
@@ -19,11 +21,12 @@ import type { DepartureCardConfig } from "@/types/domain";
 
 interface DepartureCardProps {
     card: DepartureCardConfig;
+    dragHandleProps: DragHandleProps;
     onUpdate: (patch: Partial<Omit<DepartureCardConfig, "id" | "type" | "createdAt">>) => void;
     onRemove: () => void;
 }
 
-export function DepartureCard({ card, onUpdate, onRemove }: DepartureCardProps) {
+export function DepartureCard({ card, dragHandleProps, onUpdate, onRemove }: DepartureCardProps) {
     const [isChangingStop, setIsChangingStop] = useState(!card.stopLid);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -47,7 +50,10 @@ export function DepartureCard({ card, onUpdate, onRemove }: DepartureCardProps) 
     return (
         <div className={`flex flex-col rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary_alt ${CARD_MAX_HEIGHT_CLASS}`}>
             <div className="flex shrink-0 items-center justify-between gap-2">
-                <h2 className="truncate text-md font-semibold text-primary">{card.stopName ?? "New departures card"}</h2>
+                <div className="flex min-w-0 items-center gap-2">
+                    <DragHandle {...dragHandleProps} />
+                    <h2 className="truncate text-md font-semibold text-primary">{card.stopName ?? "New departures card"}</h2>
+                </div>
                 <div className="flex shrink-0 items-center gap-1">
                     {!isChangingStop && <ButtonUtility icon={MarkerPin01} tooltip="Change stop" size="sm" color="tertiary" onClick={openChangeStop} />}
                     {!isChangingStop && card.stopLid && (

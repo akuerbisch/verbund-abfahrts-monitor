@@ -5,6 +5,8 @@ import { GitBranch01, Settings01, Trash01, X } from "@untitledui/icons";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { Toggle } from "@/components/base/toggle/toggle";
 import { CARD_MAX_HEIGHT_CLASS } from "@/components/dashboard/cardLayout";
+import { DragHandle } from "@/components/dashboard/DragHandle";
+import type { DragHandleProps } from "@/components/dashboard/SortableCard";
 import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
 import { GitlabProjectSearchBox } from "@/components/gitlab/GitlabProjectSearchBox";
 import { MergeRequestRow } from "@/components/dashboard/MergeRequestRow";
@@ -15,16 +17,19 @@ import type { GitlabMergeRequestsCardConfig } from "@/types/domain";
 
 interface GitlabMergeRequestsCardProps {
     card: GitlabMergeRequestsCardConfig;
+    dragHandleProps: DragHandleProps;
     onUpdate: (patch: Partial<Omit<GitlabMergeRequestsCardConfig, "id" | "type" | "createdAt">>) => void;
     onRemove: () => void;
 }
 
-export function GitlabMergeRequestsCard({ card, onUpdate, onRemove }: GitlabMergeRequestsCardProps) {
+export function GitlabMergeRequestsCard({ card, dragHandleProps, onUpdate, onRemove }: GitlabMergeRequestsCardProps) {
     const [isChangingProject, setIsChangingProject] = useState(!card.projectId);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const { mergeRequests, status } = useGitlabMergeRequests(card.projectId);
     const visibleMergeRequests = sortMergeRequestsByAge(filterDraftMergeRequests(mergeRequests, card.hideDrafts), card.sortOrder);
+    // projectName is stored as the full "group/repo" path — only the repo name belongs in the header.
+    const repoName = card.projectName?.split("/").pop() ?? null;
 
     const openChangeProject = () => {
         setIsChangingProject(true);
@@ -39,7 +44,12 @@ export function GitlabMergeRequestsCard({ card, onUpdate, onRemove }: GitlabMerg
     return (
         <div className={`flex flex-col rounded-xl bg-primary p-5 shadow-xs ring-1 ring-secondary_alt ${CARD_MAX_HEIGHT_CLASS}`}>
             <div className="flex shrink-0 items-center justify-between gap-2">
-                <h2 className="truncate text-md font-semibold text-primary">{card.projectName ?? "New GitLab card"}</h2>
+                <div className="flex min-w-0 items-center gap-2">
+                    <DragHandle {...dragHandleProps} />
+                    <h2 className="truncate text-md font-semibold text-primary" title={card.projectName ?? undefined}>
+                        {repoName ?? "New GitLab card"}
+                    </h2>
+                </div>
                 <div className="flex shrink-0 items-center gap-1">
                     {!isChangingProject && <ButtonUtility icon={GitBranch01} tooltip="Change project" size="sm" color="tertiary" onClick={openChangeProject} />}
                     {!isChangingProject && card.projectId && (
