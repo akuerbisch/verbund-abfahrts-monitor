@@ -1,8 +1,11 @@
 "use client";
 
+import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { arrayMove, rectSwappingStrategy, SortableContext } from "@dnd-kit/sortable";
 import { AddCardButton } from "@/components/dashboard/AddCardButton";
 import { DepartureCard } from "@/components/dashboard/DepartureCard";
 import { GitlabMergeRequestsCard } from "@/components/dashboard/GitlabMergeRequestsCard";
+import { SortableCard } from "@/components/dashboard/SortableCard";
 import type { CardConfigPatch } from "@/lib/storage/cards";
 import type { CardConfig } from "@/types/domain";
 
@@ -12,9 +15,22 @@ interface DashboardProps {
     onCreateGitlabCard: () => void;
     onUpdateCard: (id: string, patch: CardConfigPatch) => void;
     onRemoveCard: (id: string) => void;
+    onReorderCards: (orderedIds: string[]) => void;
 }
 
-export function Dashboard({ cards, onCreateDeparturesCard, onCreateGitlabCard, onUpdateCard, onRemoveCard }: DashboardProps) {
+export function Dashboard({ cards, onCreateDeparturesCard, onCreateGitlabCard, onUpdateCard, onRemoveCard, onReorderCards }: DashboardProps) {
+    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
+
+    const handleDragEnd = ({ active, over }: DragEndEvent) => {
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = cards.findIndex((card) => card.id === active.id);
+        const newIndex = cards.findIndex((card) => card.id === over.id);
+        if (oldIndex === -1 || newIndex === -1) return;
+
+        onReorderCards(arrayMove(cards, oldIndex, newIndex).map((card) => card.id));
+    };
+
     return (
         <div className="flex flex-col gap-4">
             {cards.length === 0 && <p className="text-sm text-tertiary">No cards yet — add one to start showing departures or merge requests.</p>}
@@ -23,15 +39,23 @@ export function Dashboard({ cards, onCreateDeparturesCard, onCreateGitlabCard, o
                 into the next column, rather than every card in a row being stretched
                 to match the tallest one. */}
             <div className="columns-1 gap-4 sm:columns-2 lg:columns-3 xl:columns-4 2xl:columns-5">
-                {cards.map((card) => (
-                    <div key={card.id} className="mb-4 break-inside-avoid">
-                        {card.type === "departures" ? (
-                            <DepartureCard card={card} onUpdate={(patch) => onUpdateCard(card.id, patch)} onRemove={() => onRemoveCard(card.id)} />
-                        ) : (
-                            <GitlabMergeRequestsCard card={card} onUpdate={(patch) => onUpdateCard(card.id, patch)} onRemove={() => onRemoveCard(card.id)} />
-                        )}
-                    </div>
-                ))}
+                <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                    <SortableContext items={cards.map((card) => card.id)} strategy={rectSwappingStrategy}>
+                        {cards.map((card) => (
+                            <SortableCard key={card.id} id={card.id}>
+                                {card.type === "departures" ? (
+                                    <DepartureCard card={card} onUpdate={(patch) => onUpdateCard(card.id, patch)} onRemove={() => onRemoveCard(card.id)} />
+                                ) : (
+                                    <GitlabMergeRequestsCard
+                                        card={card}
+                                        onUpdate={(patch) => onUpdateCard(card.id, patch)}
+                                        onRemove={() => onRemoveCard(card.id)}
+                                    />
+                                )}
+                            </SortableCard>
+                        ))}
+                    </SortableContext>
+                </DndContext>
 
                 <div className="mb-4 flex min-h-40 items-center justify-center break-inside-avoid rounded-xl border border-dashed border-secondary p-5">
                     <AddCardButton onCreateDeparturesCard={onCreateDeparturesCard} onCreateGitlabCard={onCreateGitlabCard} />

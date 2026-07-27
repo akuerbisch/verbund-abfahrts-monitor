@@ -104,3 +104,15 @@ export function updateCard(id: string, patch: CardConfigPatch): CardConfig[] {
 export function removeCard(id: string): CardConfig[] {
     return persist(loadCards().filter((card) => card.id !== id));
 }
+
+/** Re-sorts cards to match orderedIds; any card whose id is missing from orderedIds keeps its prior relative order at the end. */
+export function reorderCards(orderedIds: string[]): CardConfig[] {
+    const cards = loadCards();
+    const cardsById = new Map(cards.map((card) => [card.id, card]));
+    const ordered = orderedIds.map((id) => cardsById.get(id)).filter((card) => card !== undefined);
+
+    const orderedIdSet = new Set(orderedIds);
+    const remaining = cards.filter((card) => !orderedIdSet.has(card.id));
+
+    return persist([...ordered, ...remaining]);
+}

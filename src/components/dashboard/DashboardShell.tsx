@@ -5,7 +5,7 @@ import { Dashboard } from "@/components/dashboard/Dashboard";
 import { useCards } from "@/hooks/useCards";
 
 export function DashboardShell() {
-    const { cards, createDeparturesCard, createGitlabMergeRequestsCard, updateCard, removeCard } = useCards();
+    const { cards, createDeparturesCard, createGitlabMergeRequestsCard, updateCard, removeCard, reorderCards } = useCards();
 
     return (
         <div className="flex min-h-screen flex-col">
@@ -18,6 +18,7 @@ export function DashboardShell() {
                     onCreateGitlabCard={createGitlabMergeRequestsCard}
                     onUpdateCard={updateCard}
                     onRemoveCard={removeCard}
+                    onReorderCards={reorderCards}
                 />
             </main>
         </div>

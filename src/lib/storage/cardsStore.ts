@@ -1,4 +1,4 @@
-import { createDepartureCard, createGitlabCard, loadCards, removeCard, updateCard } from "@/lib/storage/cards";
+import { createDepartureCard, createGitlabCard, loadCards, removeCard, reorderCards, updateCard } from "@/lib/storage/cards";
 import type { CardConfig } from "@/types/domain";
 
 const EMPTY_CARDS: CardConfig[] = [];
@@ -40,5 +40,10 @@ export function patchCard(id: string, patch: Parameters<typeof updateCard>[1]) {
 
 export function deleteCard(id: string) {
     cache = removeCard(id);
+    notify();
+}
+
+export function reorder(orderedIds: string[]) {
+    cache = reorderCards(orderedIds);
     notify();
 }

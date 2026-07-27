@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createDepartureCard, createGitlabCard, loadCards, removeCard, updateCard } from "./cards";
+import { createDepartureCard, createGitlabCard, loadCards, removeCard, reorderCards, updateCard } from "./cards";
 import { CARDS_KEY } from "./storageKeys";
 import {
     DEFAULT_HIDE_DRAFTS,
@@ -137,6 +137,36 @@ describe("cards", () => {
         const [card] = createGitlabCard();
         const result = updateCard(card.id, { sortOrder: "newest" });
         expect(result[0]).toMatchObject({ sortOrder: "newest" });
+    });
+
+    it("reorders cards to match the given id order", () => {
+        const [first] = createDepartureCard();
+        createDepartureCard();
+        createGitlabCard();
+        const [, second, third] = loadCards();
+
+        const result = reorderCards([third.id, first.id, second.id]);
+
+        expect(result.map((c) => c.id)).toEqual([third.id, first.id, second.id]);
+        expect(loadCards().map((c) => c.id)).toEqual([third.id, first.id, second.id]);
+    });
+
+    it("appends cards missing from the given order at the end, keeping their relative order", () => {
+        const [first] = createDepartureCard();
+        createGitlabCard();
+        const [, second] = loadCards();
+
+        const result = reorderCards([first.id]);
+
+        expect(result.map((c) => c.id)).toEqual([first.id, second.id]);
+    });
+
+    it("ignores unknown ids in the given order", () => {
+        const [first] = createDepartureCard();
+
+        const result = reorderCards(["does-not-exist", first.id]);
+
+        expect(result.map((c) => c.id)).toEqual([first.id]);
     });
 
     it("rejects a stored gitlab card missing required fields", () => {
