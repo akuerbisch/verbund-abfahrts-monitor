@@ -1,4 +1,13 @@
-import { createDepartureCard, createGitlabCard, createJiraCard, loadCards, removeCard, reorderCards, updateCard } from "@/lib/storage/cards";
+import {
+    createDepartureCard,
+    createGitlabCard,
+    createJiraCard,
+    createWeatherCard as createWeatherCardConfig,
+    loadCards,
+    removeCard,
+    reorderCards,
+    updateCard,
+} from "@/lib/storage/cards";
 import type { CardConfig } from "@/types/domain";
 
 const EMPTY_CARDS: CardConfig[] = [];
@@ -35,6 +44,11 @@ export function createGitlabMergeRequestsCard() {
 
 export function createJiraVersionsCard() {
     cache = createJiraCard();
+    notify();
+}
+
+export function createWeatherCard() {
+    cache = createWeatherCardConfig();
     notify();
 }
 

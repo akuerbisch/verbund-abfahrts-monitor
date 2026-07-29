@@ -1,6 +1,6 @@
 "use client";
 
-import { Bus, Flag01, GitPullRequest, Plus } from "@untitledui/icons";
+import { Bus, Flag01, GitPullRequest, Plus, Sun } from "@untitledui/icons";
 import { Menu, MenuItem, MenuTrigger, Popover } from "react-aria-components";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
@@ -9,6 +9,7 @@ interface AddCardButtonProps {
     onCreateDeparturesCard: () => void;
     onCreateGitlabCard: () => void;
     onCreateJiraCard: () => void;
+    onCreateWeatherCard: () => void;
 }
 
 const menuItemClassName = ({ isFocused }: { isFocused: boolean }) =>
@@ -17,7 +18,7 @@ const menuItemClassName = ({ isFocused }: { isFocused: boolean }) =>
         isFocused && "bg-primary_hover",
     );
 
-export function AddCardButton({ onCreateDeparturesCard, onCreateGitlabCard, onCreateJiraCard }: AddCardButtonProps) {
+export function AddCardButton({ onCreateDeparturesCard, onCreateGitlabCard, onCreateJiraCard, onCreateWeatherCard }: AddCardButtonProps) {
     return (
         <MenuTrigger>
             <Button color="secondary" size="md" iconLeading={Plus}>
@@ -40,6 +41,10 @@ export function AddCardButton({ onCreateDeparturesCard, onCreateGitlabCard, onCr
                     <MenuItem id="jira-release-versions" textValue="Jira release versions" onAction={onCreateJiraCard} className={menuItemClassName}>
                         <Flag01 aria-hidden="true" className="size-4 shrink-0 stroke-[2.25px] text-fg-quaternary" />
                         Jira release versions
+                    </MenuItem>
+                    <MenuItem id="weather" textValue="Weather" onAction={onCreateWeatherCard} className={menuItemClassName}>
+                        <Sun aria-hidden="true" className="size-4 shrink-0 stroke-[2.25px] text-fg-quaternary" />
+                        Weather
                     </MenuItem>
                 </Menu>
             </Popover>

@@ -6,7 +6,8 @@ import { ToastViewport } from "@/components/base/toast/ToastViewport";
 import { useCards } from "@/hooks/useCards";
 
 export function DashboardShell() {
-    const { cards, createDeparturesCard, createGitlabMergeRequestsCard, createJiraVersionsCard, updateCard, removeCard, reorderCards } = useCards();
+    const { cards, createDeparturesCard, createGitlabMergeRequestsCard, createJiraVersionsCard, createWeatherCard, updateCard, removeCard, reorderCards } =
+        useCards();
 
     return (
         <div className="flex min-h-screen flex-col">
@@ -18,6 +19,7 @@ export function DashboardShell() {
                     onCreateDeparturesCard={createDeparturesCard}
                     onCreateGitlabCard={createGitlabMergeRequestsCard}
                     onCreateJiraCard={createJiraVersionsCard}
+                    onCreateWeatherCard={createWeatherCard}
                     onUpdateCard={updateCard}
                     onRemoveCard={removeCard}
                     onReorderCards={reorderCards}

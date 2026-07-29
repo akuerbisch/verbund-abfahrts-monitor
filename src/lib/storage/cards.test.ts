@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createDepartureCard, createGitlabCard, createJiraCard, loadCards, removeCard, reorderCards, updateCard } from "./cards";
+import { createDepartureCard, createGitlabCard, createJiraCard, createWeatherCard, loadCards, removeCard, reorderCards, updateCard } from "./cards";
 import { CARDS_KEY } from "./storageKeys";
 import {
     DEFAULT_HIDE_DRAFTS,
@@ -121,12 +121,13 @@ describe("cards", () => {
         });
     });
 
-    it("allows all three card types to coexist", () => {
+    it("allows all four card types to coexist", () => {
         createDepartureCard();
         createGitlabCard();
         createJiraCard();
+        createWeatherCard();
         const cards = loadCards();
-        expect(cards.map((c) => c.type).sort()).toEqual(["departures", "gitlab-merge-requests", "jira-release-versions"]);
+        expect(cards.map((c) => c.type).sort()).toEqual(["departures", "gitlab-merge-requests", "jira-release-versions", "weather"]);
     });
 
     it("updates a gitlab card by id via patch", () => {
@@ -169,6 +170,32 @@ describe("cards", () => {
         (globalThis as unknown as { window: { localStorage: MemoryStorage } }).window.localStorage.setItem(
             CARDS_KEY,
             JSON.stringify([{ id: "1", type: "jira-release-versions", projectId: null, projectName: null, createdAt: new Date().toISOString() }]),
+        );
+        expect(loadCards()).toEqual([]);
+    });
+
+    it("creates an unconfigured weather card with defaults", () => {
+        const result = createWeatherCard();
+        expect(result).toHaveLength(1);
+        expect(result[0]).toMatchObject({
+            type: "weather",
+            locationId: null,
+            locationName: null,
+            latitude: null,
+            longitude: null,
+        });
+    });
+
+    it("updates a weather card by id via patch", () => {
+        const [card] = createWeatherCard();
+        const result = updateCard(card.id, { locationId: 1, locationName: "Graz, Styria, Austria", latitude: 47.07, longitude: 15.44 });
+        expect(result[0]).toMatchObject({ locationId: 1, locationName: "Graz, Styria, Austria", latitude: 47.07, longitude: 15.44 });
+    });
+
+    it("rejects a stored weather card missing required fields", () => {
+        (globalThis as unknown as { window: { localStorage: MemoryStorage } }).window.localStorage.setItem(
+            CARDS_KEY,
+            JSON.stringify([{ id: "1", type: "weather", locationId: null, createdAt: new Date().toISOString() }]),
         );
         expect(loadCards()).toEqual([]);
     });

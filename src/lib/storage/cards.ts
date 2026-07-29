@@ -10,6 +10,7 @@ import {
     type DepartureCardConfig,
     type GitlabMergeRequestsCardConfig,
     type JiraVersionsCardConfig,
+    type WeatherCardConfig,
 } from "@/types/domain";
 
 function isDepartureCardConfig(value: unknown): value is DepartureCardConfig {
@@ -57,8 +58,22 @@ function isJiraCardConfig(value: unknown): value is JiraVersionsCardConfig {
     );
 }
 
+function isWeatherCardConfig(value: unknown): value is WeatherCardConfig {
+    if (typeof value !== "object" || value === null) return false;
+    const card = value as WeatherCardConfig;
+    return (
+        typeof card.id === "string" &&
+        card.type === "weather" &&
+        (card.locationId === null || typeof card.locationId === "number") &&
+        (card.locationName === null || typeof card.locationName === "string") &&
+        (card.latitude === null || typeof card.latitude === "number") &&
+        (card.longitude === null || typeof card.longitude === "number") &&
+        typeof card.createdAt === "string"
+    );
+}
+
 function isCardConfig(value: unknown): value is CardConfig {
-    return isDepartureCardConfig(value) || isGitlabCardConfig(value) || isJiraCardConfig(value);
+    return isDepartureCardConfig(value) || isGitlabCardConfig(value) || isJiraCardConfig(value) || isWeatherCardConfig(value);
 }
 
 export function loadCards(): CardConfig[] {
@@ -122,10 +137,25 @@ export function createJiraCard(): CardConfig[] {
     return persist([...loadCards(), newCard]);
 }
 
+export function createWeatherCard(): CardConfig[] {
+    const newCard: WeatherCardConfig = {
+        id: crypto.randomUUID(),
+        type: "weather",
+        locationId: null,
+        locationName: null,
+        latitude: null,
+        longitude: null,
+        createdAt: new Date().toISOString(),
+    };
+
+    return persist([...loadCards(), newCard]);
+}
+
 export type DepartureCardPatch = Partial<Omit<DepartureCardConfig, "id" | "type" | "createdAt">>;
 export type GitlabCardPatch = Partial<Omit<GitlabMergeRequestsCardConfig, "id" | "type" | "createdAt">>;
 export type JiraCardPatch = Partial<Omit<JiraVersionsCardConfig, "id" | "type" | "createdAt">>;
-export type CardConfigPatch = DepartureCardPatch | GitlabCardPatch | JiraCardPatch;
+export type WeatherCardPatch = Partial<Omit<WeatherCardConfig, "id" | "type" | "createdAt">>;
+export type CardConfigPatch = DepartureCardPatch | GitlabCardPatch | JiraCardPatch | WeatherCardPatch;
 
 export function updateCard(id: string, patch: CardConfigPatch): CardConfig[] {
     // Callers pass a patch shaped for the card's actual type; the merge itself is type-agnostic.

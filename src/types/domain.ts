@@ -1,4 +1,4 @@
-export type CardType = "departures" | "gitlab-merge-requests" | "jira-release-versions";
+export type CardType = "departures" | "gitlab-merge-requests" | "jira-release-versions" | "weather";
 
 export interface DepartureCardConfig {
     id: string;
@@ -37,7 +37,17 @@ export interface JiraVersionsCardConfig {
     createdAt: string;
 }
 
-export type CardConfig = DepartureCardConfig | GitlabMergeRequestsCardConfig | JiraVersionsCardConfig;
+export interface WeatherCardConfig {
+    id: string;
+    type: "weather";
+    locationId: number | null;
+    locationName: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    createdAt: string;
+}
+
+export type CardConfig = DepartureCardConfig | GitlabMergeRequestsCardConfig | JiraVersionsCardConfig | WeatherCardConfig;
 
 export const DEFAULT_REFRESH_INTERVAL_SECONDS = 60;
 export const REFRESH_INTERVAL_OPTIONS = [15, 30, 60, 120, 300] as const;

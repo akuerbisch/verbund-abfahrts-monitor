@@ -7,6 +7,7 @@ import { DepartureCard } from "@/components/dashboard/DepartureCard";
 import { GitlabMergeRequestsCard } from "@/components/dashboard/GitlabMergeRequestsCard";
 import { JiraVersionsCard } from "@/components/dashboard/JiraVersionsCard";
 import { SortableCard, type DragHandleProps } from "@/components/dashboard/SortableCard";
+import { WeatherCard } from "@/components/dashboard/WeatherCard";
 import type { CardConfigPatch } from "@/lib/storage/cards";
 import type { CardConfig } from "@/types/domain";
 
@@ -15,6 +16,7 @@ interface DashboardProps {
     onCreateDeparturesCard: () => void;
     onCreateGitlabCard: () => void;
     onCreateJiraCard: () => void;
+    onCreateWeatherCard: () => void;
     onUpdateCard: (id: string, patch: CardConfigPatch) => void;
     onRemoveCard: (id: string) => void;
     onReorderCards: (orderedIds: string[]) => void;
@@ -28,6 +30,8 @@ function renderCard(card: CardConfig, dragHandleProps: DragHandleProps, onUpdate
             return <GitlabMergeRequestsCard card={card} dragHandleProps={dragHandleProps} onUpdate={onUpdate} onRemove={onRemove} />;
         case "jira-release-versions":
             return <JiraVersionsCard card={card} dragHandleProps={dragHandleProps} onUpdate={onUpdate} onRemove={onRemove} />;
+        case "weather":
+            return <WeatherCard card={card} dragHandleProps={dragHandleProps} onUpdate={onUpdate} onRemove={onRemove} />;
         default: {
             const exhaustiveCheck: never = card;
             return exhaustiveCheck;
@@ -35,7 +39,16 @@ function renderCard(card: CardConfig, dragHandleProps: DragHandleProps, onUpdate
     }
 }
 
-export function Dashboard({ cards, onCreateDeparturesCard, onCreateGitlabCard, onCreateJiraCard, onUpdateCard, onRemoveCard, onReorderCards }: DashboardProps) {
+export function Dashboard({
+    cards,
+    onCreateDeparturesCard,
+    onCreateGitlabCard,
+    onCreateJiraCard,
+    onCreateWeatherCard,
+    onUpdateCard,
+    onRemoveCard,
+    onReorderCards,
+}: DashboardProps) {
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
     const handleDragEnd = ({ active, over }: DragEndEvent) => {
@@ -51,7 +64,7 @@ export function Dashboard({ cards, onCreateDeparturesCard, onCreateGitlabCard, o
     return (
         <div className="flex flex-col gap-4">
             {cards.length === 0 && (
-                <p className="text-sm text-tertiary">No cards yet — add one to start showing departures, merge requests, or release versions.</p>
+                <p className="text-sm text-tertiary">No cards yet — add one to start showing departures, merge requests, release versions, or weather.</p>
             )}
 
             {/* CSS columns instead of grid — each card keeps its own height and flows
@@ -69,7 +82,12 @@ export function Dashboard({ cards, onCreateDeparturesCard, onCreateGitlabCard, o
                 </DndContext>
 
                 <div className="mb-4 flex min-h-40 items-center justify-center break-inside-avoid rounded-xl border border-dashed border-secondary p-5">
-                    <AddCardButton onCreateDeparturesCard={onCreateDeparturesCard} onCreateGitlabCard={onCreateGitlabCard} onCreateJiraCard={onCreateJiraCard} />
+                    <AddCardButton
+                        onCreateDeparturesCard={onCreateDeparturesCard}
+                        onCreateGitlabCard={onCreateGitlabCard}
+                        onCreateJiraCard={onCreateJiraCard}
+                        onCreateWeatherCard={onCreateWeatherCard}
+                    />
                 </div>
             </div>
         </div>
