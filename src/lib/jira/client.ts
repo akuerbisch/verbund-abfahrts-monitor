@@ -22,22 +22,6 @@ function getJiraBaseUrl(): string {
     return process.env.JIRA_BASE_URL || DEFAULT_JIRA_BASE_URL;
 }
 
-function getJiraEmail(): string {
-    const email = process.env.JIRA_EMAIL;
-    if (!email) {
-        throw new JiraUpstreamError("JIRA_EMAIL is not configured on the server");
-    }
-    return email;
-}
-
-function getJiraToken(): string {
-    const token = process.env.JIRA_TOKEN;
-    if (!token) {
-        throw new JiraUpstreamError("JIRA_TOKEN is not configured on the server");
-    }
-    return token;
-}
-
 let cachedCloudId: string | null = null;
 
 /**
@@ -69,13 +53,13 @@ async function getJiraCloudId(signal: AbortSignal): Promise<string> {
 /**
  * Calls the Jira Cloud REST API v3 server-side, via the api.atlassian.com
  * gateway (required for scoped API tokens) rather than the site domain
- * directly. Email + token are read fresh on every call (never cached at
- * module load) and sent as HTTP Basic auth (base64 "email:token") — the
- * gateway rejects a bare Bearer token for this kind of token outright.
- * Never forwarded to the client, which only ever talks to our own
- * /api/jira/* routes.
+ * directly. Email + token come from the caller (sourced from the request
+ * itself, not a server-held secret — this server never has a standing Jira
+ * credential of its own) and are sent as HTTP Basic auth (base64
+ * "email:token") — the gateway rejects a bare Bearer token for this kind of
+ * token outright.
  */
-export async function callJiraApi(path: string, searchParams?: Record<string, string>, timeoutMs = 8000): Promise<unknown> {
+export async function callJiraApi(email: string, token: string, path: string, searchParams?: Record<string, string>, timeoutMs = 8000): Promise<unknown> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -87,7 +71,7 @@ export async function callJiraApi(path: string, searchParams?: Record<string, st
             url.searchParams.set(key, value);
         }
 
-        const credentials = Buffer.from(`${getJiraEmail()}:${getJiraToken()}`).toString("base64");
+        const credentials = Buffer.from(`${email}:${token}`).toString("base64");
         const response = await fetch(url, {
             headers: { Authorization: `Basic ${credentials}`, Accept: "application/json" },
             signal: controller.signal,

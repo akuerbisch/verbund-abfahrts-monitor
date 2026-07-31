@@ -11,6 +11,7 @@ import { LoadingIndicator } from "@/components/application/loading-indicator/loa
 import { GitlabProjectSearchBox } from "@/components/gitlab/GitlabProjectSearchBox";
 import { MergeRequestRow } from "@/components/dashboard/MergeRequestRow";
 import { MrSortOrderControl } from "@/components/settings/MrSortOrderControl";
+import { useCredentials } from "@/hooks/useCredentials";
 import { useGitlabMergeRequests } from "@/hooks/useGitlabMergeRequests";
 import { filterDraftMergeRequests, sortMergeRequestsByAge } from "@/lib/gitlab/parseMergeRequests";
 import { showToast } from "@/lib/toast/toastStore";
@@ -24,10 +25,13 @@ interface GitlabMergeRequestsCardProps {
 }
 
 export function GitlabMergeRequestsCard({ card, dragHandleProps, onUpdate, onRemove }: GitlabMergeRequestsCardProps) {
+    const { credentials } = useCredentials();
+    const gitlabToken = credentials.gitlabToken;
+
     const [isChangingProject, setIsChangingProject] = useState(!card.projectId);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-    const { mergeRequests, status } = useGitlabMergeRequests(card.projectId);
+    const { mergeRequests, status } = useGitlabMergeRequests(card.projectId, gitlabToken);
     const visibleMergeRequests = sortMergeRequestsByAge(filterDraftMergeRequests(mergeRequests, card.hideDrafts), card.sortOrder);
     // projectName is stored as the full "group/repo" path — only the repo name belongs in the header.
     const repoName = card.projectName?.split("/").pop() ?? null;
@@ -64,19 +68,26 @@ export function GitlabMergeRequestsCard({ card, dragHandleProps, onUpdate, onRem
                     </h2>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                    {!isChangingProject && <ButtonUtility icon={GitBranch01} tooltip="Change project" size="sm" color="tertiary" onClick={openChangeProject} />}
-                    {!isChangingProject && card.projectId && (
+                    {gitlabToken && !isChangingProject && (
+                        <ButtonUtility icon={GitBranch01} tooltip="Change project" size="sm" color="tertiary" onClick={openChangeProject} />
+                    )}
+                    {gitlabToken && !isChangingProject && card.projectId && (
                         <ButtonUtility icon={Settings01} tooltip="Card settings" size="sm" color="tertiary" onClick={toggleSettings} />
                     )}
                     <ButtonUtility icon={Trash01} tooltip="Remove card" size="sm" color="tertiary" onClick={onRemove} />
                 </div>
             </div>
 
-            {isChangingProject ? (
+            {!gitlabToken ? (
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                    <p className="py-6 text-sm text-tertiary">Add your GitLab access token via the key icon in the header to use this card.</p>
+                </div>
+            ) : isChangingProject ? (
                 // Not wrapped in the scrollable region below — the search dropdown is
                 // absolutely positioned and would get clipped by overflow-y-auto.
                 <div className="mt-4 flex items-start gap-2">
                     <GitlabProjectSearchBox
+                        token={gitlabToken}
                         onSelectProject={(project) => {
                             onUpdate({ projectId: project.id, projectName: project.pathWithNamespace });
                             setIsChangingProject(false);

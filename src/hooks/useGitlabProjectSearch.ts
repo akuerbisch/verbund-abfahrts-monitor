@@ -13,18 +13,20 @@ interface FetchState {
 }
 
 /** No minimum query length — the accessible-project list is small, so an empty query lists everything. */
-export function useGitlabProjectSearch(query: string) {
+export function useGitlabProjectSearch(query: string, token: string | null) {
     const trimmed = query.trim();
     const [fetchState, setFetchState] = useState<FetchState>({ projects: [], status: "loading" });
 
     useEffect(() => {
+        if (!token) return;
+
         const controller = new AbortController();
         const timeout = setTimeout(() => {
             setFetchState((prev) => ({ ...prev, status: "loading" }));
 
             fetch("/api/gitlab/projects/search", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "application/json", "X-Gitlab-Token": token },
                 body: JSON.stringify({ query: trimmed }),
                 signal: controller.signal,
             })
@@ -40,7 +42,7 @@ export function useGitlabProjectSearch(query: string) {
             clearTimeout(timeout);
             controller.abort();
         };
-    }, [trimmed]);
+    }, [trimmed, token]);
 
     return fetchState;
 }

@@ -4,18 +4,19 @@ import { useRef, useState } from "react";
 import { SearchMd } from "@untitledui/icons";
 import { Input } from "@/components/base/input/input";
 import { JiraProjectSearchResults } from "@/components/jira/JiraProjectSearchResults";
-import { useJiraProjectSearch } from "@/hooks/useJiraProjectSearch";
+import { useJiraProjectSearch, type JiraCredentials } from "@/hooks/useJiraProjectSearch";
 import type { JiraProject } from "@/lib/jira/parseProjects";
 
 interface JiraProjectSearchBoxProps {
+    credentials: JiraCredentials;
     onSelectProject: (project: JiraProject) => void;
 }
 
-export function JiraProjectSearchBox({ onSelectProject }: JiraProjectSearchBoxProps) {
+export function JiraProjectSearchBox({ credentials, onSelectProject }: JiraProjectSearchBoxProps) {
     const [query, setQuery] = useState("");
     const [isFocused, setIsFocused] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const { projects, status } = useJiraProjectSearch(query);
+    const { projects, status } = useJiraProjectSearch(query, credentials);
 
     const handleSelect = (project: JiraProject) => {
         onSelectProject(project);

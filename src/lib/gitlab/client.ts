@@ -21,22 +21,14 @@ function getGitlabBaseUrl(): string {
     return process.env.GITLAB_BASE_URL || DEFAULT_GITLAB_BASE_URL;
 }
 
-function getGitlabToken(): string {
-    const token = process.env.GITLAB_ACCESS_TOKEN;
-    if (!token) {
-        throw new GitlabUpstreamError("GITLAB_ACCESS_TOKEN is not configured on the server");
-    }
-    return token;
-}
-
 /**
- * Calls the GitLab REST API server-side. The access token is read fresh on
- * every call (never cached at module load) and sent via the PRIVATE-TOKEN
- * header GitLab access tokens use — never Authorization: Bearer, and never
- * forwarded to the client, which only ever talks to our own /api/gitlab/*
- * routes.
+ * Calls the GitLab REST API server-side. The access token comes from the
+ * caller (sourced from the request itself, not a server-held secret — this
+ * server never has a standing GitLab credential of its own) and is sent via
+ * the PRIVATE-TOKEN header GitLab access tokens use, never Authorization:
+ * Bearer.
  */
-export async function callGitlabApi(path: string, searchParams?: Record<string, string>, timeoutMs = 8000): Promise<unknown> {
+export async function callGitlabApi(token: string, path: string, searchParams?: Record<string, string>, timeoutMs = 8000): Promise<unknown> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -47,7 +39,7 @@ export async function callGitlabApi(path: string, searchParams?: Record<string, 
         }
 
         const response = await fetch(url, {
-            headers: { "PRIVATE-TOKEN": getGitlabToken() },
+            headers: { "PRIVATE-TOKEN": token },
             signal: controller.signal,
         });
 

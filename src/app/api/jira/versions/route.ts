@@ -5,6 +5,12 @@ import { filterUnreleasedVersions, parseJiraVersion, parseJiraVersionMeta, sortJ
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+    const email = request.headers.get("x-jira-email");
+    const token = request.headers.get("x-jira-token");
+    if (!email || !token) {
+        return NextResponse.json({ error: "Missing Jira email/token" }, { status: 401 });
+    }
+
     const body = await request.json().catch(() => null);
     const projectId = typeof body?.projectId === "string" ? body.projectId : null;
 
@@ -13,7 +19,7 @@ export async function POST(request: Request) {
     }
 
     try {
-        const rawVersions = await callJiraApi(`/project/${projectId}/versions`);
+        const rawVersions = await callJiraApi(email, token, `/project/${projectId}/versions`);
         const versionList = Array.isArray(rawVersions) ? rawVersions : [];
 
         const allMeta = versionList.map(parseJiraVersionMeta).filter((v): v is JiraVersionMeta => v !== null);
@@ -23,7 +29,7 @@ export async function POST(request: Request) {
             unreleasedMeta.map(async (meta) => {
                 // Progress isn't in the versions list response — fetch it per version,
                 // tolerating a per-version failure rather than failing the whole card.
-                const issueCount = await callJiraApi(`/version/${meta.id}/unresolvedIssueCount`).catch(() => ({}));
+                const issueCount = await callJiraApi(email, token, `/version/${meta.id}/unresolvedIssueCount`).catch(() => ({}));
                 return parseJiraVersion(meta, issueCount);
             }),
         );

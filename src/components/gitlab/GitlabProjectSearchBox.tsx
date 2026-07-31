@@ -8,14 +8,15 @@ import { useGitlabProjectSearch } from "@/hooks/useGitlabProjectSearch";
 import type { GitlabProject } from "@/lib/gitlab/parseProjects";
 
 interface GitlabProjectSearchBoxProps {
+    token: string;
     onSelectProject: (project: GitlabProject) => void;
 }
 
-export function GitlabProjectSearchBox({ onSelectProject }: GitlabProjectSearchBoxProps) {
+export function GitlabProjectSearchBox({ token, onSelectProject }: GitlabProjectSearchBoxProps) {
     const [query, setQuery] = useState("");
     const [isFocused, setIsFocused] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-    const { projects, status } = useGitlabProjectSearch(query);
+    const { projects, status } = useGitlabProjectSearch(query, token);
 
     const handleSelect = (project: GitlabProject) => {
         onSelectProject(project);

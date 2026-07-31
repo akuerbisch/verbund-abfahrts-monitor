@@ -8,19 +8,19 @@ export type GitlabMergeRequestsStatus = "unconfigured" | "loading" | "success" |
 // MRs don't need departure-board-speed polling.
 const POLL_INTERVAL_MS = 3 * 60 * 1000;
 
-export function useGitlabMergeRequests(projectId: number | null) {
+export function useGitlabMergeRequests(projectId: number | null, token: string | null) {
     const [status, setStatus] = useState<GitlabMergeRequestsStatus>("loading");
     const [mergeRequests, setMergeRequests] = useState<ParsedMergeRequest[]>([]);
     const hasDataRef = useRef(false);
 
     const fetchMergeRequests = useCallback(
         async (signal?: AbortSignal) => {
-            if (projectId === null) return;
+            if (projectId === null || !token) return;
 
             try {
                 const response = await fetch("/api/gitlab/merge-requests", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { "Content-Type": "application/json", "X-Gitlab-Token": token },
                     body: JSON.stringify({ projectId }),
                     signal,
                 });
@@ -35,11 +35,11 @@ export function useGitlabMergeRequests(projectId: number | null) {
                 setStatus(hasDataRef.current ? "stale-error" : "error");
             }
         },
-        [projectId],
+        [projectId, token],
     );
 
     useEffect(() => {
-        if (projectId === null) return;
+        if (projectId === null || !token) return;
 
         const controller = new AbortController();
         // Deferred to a microtask so the initial fetch isn't a bare call in the effect body.
@@ -74,9 +74,9 @@ export function useGitlabMergeRequests(projectId: number | null) {
             stopPolling();
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
-    }, [fetchMergeRequests, projectId]);
+    }, [fetchMergeRequests, projectId, token]);
 
-    if (projectId === null) {
+    if (projectId === null || !token) {
         return { mergeRequests: [] as ParsedMergeRequest[], status: "unconfigured" as const };
     }
 

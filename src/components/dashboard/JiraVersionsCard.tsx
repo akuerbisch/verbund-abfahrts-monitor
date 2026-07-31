@@ -10,6 +10,7 @@ import { LoadingIndicator } from "@/components/application/loading-indicator/loa
 import { JiraProjectSearchBox } from "@/components/jira/JiraProjectSearchBox";
 import { VersionRow } from "@/components/dashboard/VersionRow";
 import { JiraVersionSortOrderControl } from "@/components/settings/JiraVersionSortOrderControl";
+import { useCredentials } from "@/hooks/useCredentials";
 import { useJiraVersions } from "@/hooks/useJiraVersions";
 import { sortJiraVersions } from "@/lib/jira/parseVersions";
 import { showToast } from "@/lib/toast/toastStore";
@@ -23,10 +24,13 @@ interface JiraVersionsCardProps {
 }
 
 export function JiraVersionsCard({ card, dragHandleProps, onUpdate, onRemove }: JiraVersionsCardProps) {
+    const { credentials } = useCredentials();
+    const jiraCredentials = credentials.jiraEmail && credentials.jiraToken ? { email: credentials.jiraEmail, token: credentials.jiraToken } : null;
+
     const [isChangingProject, setIsChangingProject] = useState(!card.projectId);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-    const { versions, status } = useJiraVersions(card.projectId);
+    const { versions, status } = useJiraVersions(card.projectId, jiraCredentials);
     // The API route already filters to unreleased versions and pre-sorts by
     // the default order — re-sort client-side to honor the card's own setting.
     const visibleVersions = sortJiraVersions(versions, card.sortOrder);
@@ -63,19 +67,26 @@ export function JiraVersionsCard({ card, dragHandleProps, onUpdate, onRemove }: 
                     </h2>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                    {!isChangingProject && <ButtonUtility icon={Flag01} tooltip="Change project" size="sm" color="tertiary" onClick={openChangeProject} />}
-                    {!isChangingProject && card.projectId && (
+                    {jiraCredentials && !isChangingProject && (
+                        <ButtonUtility icon={Flag01} tooltip="Change project" size="sm" color="tertiary" onClick={openChangeProject} />
+                    )}
+                    {jiraCredentials && !isChangingProject && card.projectId && (
                         <ButtonUtility icon={Settings01} tooltip="Card settings" size="sm" color="tertiary" onClick={toggleSettings} />
                     )}
                     <ButtonUtility icon={Trash01} tooltip="Remove card" size="sm" color="tertiary" onClick={onRemove} />
                 </div>
             </div>
 
-            {isChangingProject ? (
+            {!jiraCredentials ? (
+                <div className="min-h-0 flex-1 overflow-y-auto">
+                    <p className="py-6 text-sm text-tertiary">Add your Jira email and API token via the key icon in the header to use this card.</p>
+                </div>
+            ) : isChangingProject ? (
                 // Not wrapped in the scrollable region below — the search dropdown is
                 // absolutely positioned and would get clipped by overflow-y-auto.
                 <div className="mt-4 flex items-start gap-2">
                     <JiraProjectSearchBox
+                        credentials={jiraCredentials}
                         onSelectProject={(project) => {
                             onUpdate({ projectId: project.id, projectKey: project.key, projectName: project.name });
                             setIsChangingProject(false);

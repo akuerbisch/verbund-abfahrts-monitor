@@ -5,6 +5,11 @@ import { parseMergeRequest, sortMergeRequestsByAge, type ParsedMergeRequest } fr
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+    const token = request.headers.get("x-gitlab-token");
+    if (!token) {
+        return NextResponse.json({ error: "Missing GitLab access token" }, { status: 401 });
+    }
+
     const body = await request.json().catch(() => null);
     const projectId = typeof body?.projectId === "number" ? body.projectId : null;
 
@@ -13,7 +18,7 @@ export async function POST(request: Request) {
     }
 
     try {
-        const rawMergeRequests = await callGitlabApi(`/projects/${projectId}/merge_requests`, {
+        const rawMergeRequests = await callGitlabApi(token, `/projects/${projectId}/merge_requests`, {
             state: "opened",
             order_by: "created_at",
             sort: "asc",
@@ -28,7 +33,7 @@ export async function POST(request: Request) {
 
                 // Approval state isn't in the list response — fetch it per MR, tolerating a
                 // per-MR failure rather than failing the whole card.
-                const approvals = await callGitlabApi(`/projects/${projectId}/merge_requests/${iid}/approvals`).catch(() => ({}));
+                const approvals = await callGitlabApi(token, `/projects/${projectId}/merge_requests/${iid}/approvals`).catch(() => ({}));
                 return parseMergeRequest(mr, approvals);
             }),
         );
