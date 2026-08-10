@@ -5,8 +5,8 @@ import type { ParsedJiraVersion } from "@/lib/jira/parseVersions";
 
 export type JiraVersionsStatus = "unconfigured" | "loading" | "success" | "error" | "stale-error";
 
-// Release versions don't need departure-board-speed polling.
-const POLL_INTERVAL_MS = 3 * 60 * 1000;
+// Release versions change slowly — hourly is plenty and cuts Jira API/Vercel load.
+const POLL_INTERVAL_MS = 60 * 60 * 1000;
 
 export function useJiraVersions(projectId: string | null, email: string | null, token: string | null) {
     const [status, setStatus] = useState<JiraVersionsStatus>("loading");
