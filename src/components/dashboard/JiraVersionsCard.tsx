@@ -25,12 +25,14 @@ interface JiraVersionsCardProps {
 
 export function JiraVersionsCard({ card, dragHandleProps, onUpdate, onRemove }: JiraVersionsCardProps) {
     const { credentials } = useCredentials();
-    const jiraCredentials = credentials.jiraEmail && credentials.jiraToken ? { email: credentials.jiraEmail, token: credentials.jiraToken } : null;
+    const jiraEmail = credentials.jiraEmail;
+    const jiraToken = credentials.jiraToken;
+    const hasJiraCredentials = Boolean(jiraEmail && jiraToken);
 
     const [isChangingProject, setIsChangingProject] = useState(!card.projectId);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
-    const { versions, status } = useJiraVersions(card.projectId, jiraCredentials);
+    const { versions, status } = useJiraVersions(card.projectId, jiraEmail, jiraToken);
     // The API route already filters to unreleased versions and pre-sorts by
     // the default order — re-sort client-side to honor the card's own setting.
     const visibleVersions = sortJiraVersions(versions, card.sortOrder);
@@ -67,17 +69,17 @@ export function JiraVersionsCard({ card, dragHandleProps, onUpdate, onRemove }: 
                     </h2>
                 </div>
                 <div className="flex shrink-0 items-center gap-1">
-                    {jiraCredentials && !isChangingProject && (
+                    {hasJiraCredentials && !isChangingProject && (
                         <ButtonUtility icon={Flag01} tooltip="Change project" size="sm" color="tertiary" onClick={openChangeProject} />
                     )}
-                    {jiraCredentials && !isChangingProject && card.projectId && (
+                    {hasJiraCredentials && !isChangingProject && card.projectId && (
                         <ButtonUtility icon={Settings01} tooltip="Card settings" size="sm" color="tertiary" onClick={toggleSettings} />
                     )}
                     <ButtonUtility icon={Trash01} tooltip="Remove card" size="sm" color="tertiary" onClick={onRemove} />
                 </div>
             </div>
 
-            {!jiraCredentials ? (
+            {!jiraEmail || !jiraToken ? (
                 <div className="min-h-0 flex-1 overflow-y-auto">
                     <p className="py-6 text-sm text-tertiary">Add your Jira email and API token via the key icon in the header to use this card.</p>
                 </div>
@@ -86,7 +88,8 @@ export function JiraVersionsCard({ card, dragHandleProps, onUpdate, onRemove }: 
                 // absolutely positioned and would get clipped by overflow-y-auto.
                 <div className="mt-4 flex items-start gap-2">
                     <JiraProjectSearchBox
-                        credentials={jiraCredentials}
+                        email={jiraEmail}
+                        token={jiraToken}
                         onSelectProject={(project) => {
                             onUpdate({ projectId: project.id, projectKey: project.key, projectName: project.name });
                             setIsChangingProject(false);

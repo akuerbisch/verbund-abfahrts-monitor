@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { JiraCredentials } from "@/hooks/useJiraProjectSearch";
 import type { ParsedJiraVersion } from "@/lib/jira/parseVersions";
 
 export type JiraVersionsStatus = "unconfigured" | "loading" | "success" | "error" | "stale-error";
@@ -9,19 +8,19 @@ export type JiraVersionsStatus = "unconfigured" | "loading" | "success" | "error
 // Release versions don't need departure-board-speed polling.
 const POLL_INTERVAL_MS = 3 * 60 * 1000;
 
-export function useJiraVersions(projectId: string | null, credentials: JiraCredentials | null) {
+export function useJiraVersions(projectId: string | null, email: string | null, token: string | null) {
     const [status, setStatus] = useState<JiraVersionsStatus>("loading");
     const [versions, setVersions] = useState<ParsedJiraVersion[]>([]);
     const hasDataRef = useRef(false);
 
     const fetchVersions = useCallback(
         async (signal?: AbortSignal) => {
-            if (projectId === null || !credentials) return;
+            if (projectId === null || !email || !token) return;
 
             try {
                 const response = await fetch("/api/jira/versions", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json", "X-Jira-Email": credentials.email, "X-Jira-Token": credentials.token },
+                    headers: { "Content-Type": "application/json", "X-Jira-Email": email, "X-Jira-Token": token },
                     body: JSON.stringify({ projectId }),
                     signal,
                 });
@@ -36,11 +35,11 @@ export function useJiraVersions(projectId: string | null, credentials: JiraCrede
                 setStatus(hasDataRef.current ? "stale-error" : "error");
             }
         },
-        [projectId, credentials],
+        [projectId, email, token],
     );
 
     useEffect(() => {
-        if (projectId === null || !credentials) return;
+        if (projectId === null || !email || !token) return;
 
         const controller = new AbortController();
         // Deferred to a microtask so the initial fetch isn't a bare call in the effect body.
@@ -75,9 +74,9 @@ export function useJiraVersions(projectId: string | null, credentials: JiraCrede
             stopPolling();
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
-    }, [fetchVersions, projectId, credentials]);
+    }, [fetchVersions, projectId, email, token]);
 
-    if (projectId === null || !credentials) {
+    if (projectId === null || !email || !token) {
         return { versions: [] as ParsedJiraVersion[], status: "unconfigured" as const };
     }
 
