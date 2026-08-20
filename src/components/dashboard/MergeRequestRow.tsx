@@ -1,4 +1,5 @@
 import { Badge } from "@/components/base/badges/badges";
+import { getMrAgeInDays, getMrAgeIntensity } from "@/lib/gitlab/mrAge";
 import type { ParsedMergeRequest } from "@/lib/gitlab/parseMergeRequests";
 
 function approvalLabel(mergeRequest: ParsedMergeRequest): string {
@@ -8,8 +9,12 @@ function approvalLabel(mergeRequest: ParsedMergeRequest): string {
 }
 
 export function MergeRequestRow({ mergeRequest }: { mergeRequest: ParsedMergeRequest }) {
+    const ageIntensity = getMrAgeIntensity(getMrAgeInDays(mergeRequest.createdAt));
+
     return (
-        <li className="flex flex-col gap-1.5 py-3">
+        <li className="relative flex flex-col gap-1.5 py-3">
+            <div className="absolute inset-x-0 top-0 h-1 rounded-full bg-error-solid" style={{ opacity: ageIntensity }} aria-hidden="true" />
+
             <a href={mergeRequest.webUrl} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-primary hover:underline">
                 {mergeRequest.title}
             </a>
