@@ -13,6 +13,7 @@ export function PollingPauseToggle() {
             tooltip={isPaused ? "Resume live updates" : "Pause live updates"}
             size="sm"
             color="tertiary"
+            className={isPaused ? "bg-warning-primary text-fg-warning-primary hover:bg-warning-secondary" : undefined}
             onClick={() => setPollingPaused(!isPaused)}
         />
     );
