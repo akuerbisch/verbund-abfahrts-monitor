@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePollingPaused } from "@/hooks/usePollingPaused";
 import type { ParsedMergeRequest } from "@/lib/gitlab/parseMergeRequests";
 
 export type GitlabMergeRequestsStatus = "unconfigured" | "loading" | "success" | "error" | "stale-error";
@@ -12,6 +13,7 @@ export function useGitlabMergeRequests(projectId: number | null, token: string |
     const [status, setStatus] = useState<GitlabMergeRequestsStatus>("loading");
     const [mergeRequests, setMergeRequests] = useState<ParsedMergeRequest[]>([]);
     const hasDataRef = useRef(false);
+    const { isPaused } = usePollingPaused();
 
     const fetchMergeRequests = useCallback(
         async (signal?: AbortSignal) => {
@@ -39,7 +41,7 @@ export function useGitlabMergeRequests(projectId: number | null, token: string |
     );
 
     useEffect(() => {
-        if (projectId === null || !token) return;
+        if (projectId === null || !token || isPaused) return;
 
         const controller = new AbortController();
         // Deferred to a microtask so the initial fetch isn't a bare call in the effect body.
@@ -74,7 +76,7 @@ export function useGitlabMergeRequests(projectId: number | null, token: string |
             stopPolling();
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
-    }, [fetchMergeRequests, projectId, token]);
+    }, [fetchMergeRequests, projectId, token, isPaused]);
 
     if (projectId === null || !token) {
         return { mergeRequests: [] as ParsedMergeRequest[], status: "unconfigured" as const };

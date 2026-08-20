@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePollingPaused } from "@/hooks/usePollingPaused";
 import type { ParsedDeparture } from "@/lib/vao/parseDepartures";
 
 export type StationBoardStatus = "unconfigured" | "loading" | "success" | "error" | "stale-error";
@@ -32,6 +33,7 @@ export function useStationBoard(stop: Stop | null, refreshIntervalSeconds: numbe
     const [departures, setDepartures] = useState<ParsedDeparture[]>([]);
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const rawRef = useRef<RawBoard | null>(null);
+    const { isPaused } = usePollingPaused();
 
     const fetchDepartures = useCallback(
         async (signal?: AbortSignal) => {
@@ -63,7 +65,7 @@ export function useStationBoard(stop: Stop | null, refreshIntervalSeconds: numbe
     );
 
     useEffect(() => {
-        if (!stopName || !stopLid) return;
+        if (!stopName || !stopLid || isPaused) return;
 
         const controller = new AbortController();
         // Deferred to a microtask so the initial fetch isn't a bare call in the effect body.
@@ -98,7 +100,7 @@ export function useStationBoard(stop: Stop | null, refreshIntervalSeconds: numbe
             stopPolling();
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
-    }, [fetchDepartures, refreshIntervalSeconds, stopName, stopLid]);
+    }, [fetchDepartures, refreshIntervalSeconds, stopName, stopLid, isPaused]);
 
     useEffect(() => {
         const id = setInterval(() => {

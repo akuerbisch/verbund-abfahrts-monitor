@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePollingPaused } from "@/hooks/usePollingPaused";
 import type { ParsedJiraVersion } from "@/lib/jira/parseVersions";
 
 export type JiraVersionsStatus = "unconfigured" | "loading" | "success" | "error" | "stale-error";
@@ -12,6 +13,7 @@ export function useJiraVersions(projectId: string | null, email: string | null, 
     const [status, setStatus] = useState<JiraVersionsStatus>("loading");
     const [versions, setVersions] = useState<ParsedJiraVersion[]>([]);
     const hasDataRef = useRef(false);
+    const { isPaused } = usePollingPaused();
 
     const fetchVersions = useCallback(
         async (signal?: AbortSignal) => {
@@ -39,7 +41,7 @@ export function useJiraVersions(projectId: string | null, email: string | null, 
     );
 
     useEffect(() => {
-        if (projectId === null || !email || !token) return;
+        if (projectId === null || !email || !token || isPaused) return;
 
         const controller = new AbortController();
         // Deferred to a microtask so the initial fetch isn't a bare call in the effect body.
@@ -74,7 +76,7 @@ export function useJiraVersions(projectId: string | null, email: string | null, 
             stopPolling();
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
-    }, [fetchVersions, projectId, email, token]);
+    }, [fetchVersions, projectId, email, token, isPaused]);
 
     if (projectId === null || !email || !token) {
         return { versions: [] as ParsedJiraVersion[], status: "unconfigured" as const };

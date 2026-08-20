@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePollingPaused } from "@/hooks/usePollingPaused";
 import type { ParsedWeatherForecast } from "@/lib/weather/parseForecast";
 
 export type WeatherStatus = "unconfigured" | "loading" | "success" | "error" | "stale-error";
@@ -20,6 +21,7 @@ export function useWeather(location: Coordinates | null) {
     const [status, setStatus] = useState<WeatherStatus>("loading");
     const [forecast, setForecast] = useState<ParsedWeatherForecast | null>(null);
     const hasDataRef = useRef(false);
+    const { isPaused } = usePollingPaused();
 
     const fetchForecast = useCallback(
         async (signal?: AbortSignal) => {
@@ -47,7 +49,7 @@ export function useWeather(location: Coordinates | null) {
     );
 
     useEffect(() => {
-        if (latitude === null || longitude === null) return;
+        if (latitude === null || longitude === null || isPaused) return;
 
         const controller = new AbortController();
         // Deferred to a microtask so the initial fetch isn't a bare call in the effect body.
@@ -82,7 +84,7 @@ export function useWeather(location: Coordinates | null) {
             stopPolling();
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
-    }, [fetchForecast, latitude, longitude]);
+    }, [fetchForecast, latitude, longitude, isPaused]);
 
     if (latitude === null || longitude === null) {
         return { forecast: null as ParsedWeatherForecast | null, status: "unconfigured" as const };
