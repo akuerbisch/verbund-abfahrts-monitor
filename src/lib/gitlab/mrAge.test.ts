@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getMrAgeInDays, getMrAgeIntensity, MR_AGE_INTENSITY_MAX_DAYS } from "./mrAge";
+import { getMrAgeInDays, getMrAgeTier, MR_AGE_TIERS } from "./mrAge";
 
 describe("getMrAgeInDays", () => {
     const now = new Date("2026-08-20T12:00:00Z");
@@ -17,24 +17,34 @@ describe("getMrAgeInDays", () => {
     });
 });
 
-describe("getMrAgeIntensity", () => {
-    it("is 0 for a brand-new MR", () => {
-        expect(getMrAgeIntensity(0)).toBe(0);
+describe("getMrAgeTier", () => {
+    it("returns the Fresh tier for a brand-new MR", () => {
+        expect(getMrAgeTier(0).label).toBe("Fresh");
     });
 
-    it("scales linearly up to the max-age threshold", () => {
-        expect(getMrAgeIntensity(MR_AGE_INTENSITY_MAX_DAYS / 2)).toBeCloseTo(0.5);
+    it("returns the Fresh tier just under the Ripening threshold", () => {
+        expect(getMrAgeTier(2.9).label).toBe("Fresh");
     });
 
-    it("reaches 1 at the max-age threshold", () => {
-        expect(getMrAgeIntensity(MR_AGE_INTENSITY_MAX_DAYS)).toBe(1);
+    it("returns the Ripening tier at its threshold", () => {
+        expect(getMrAgeTier(3).label).toBe("Ripening");
     });
 
-    it("clamps to 1 beyond the max-age threshold", () => {
-        expect(getMrAgeIntensity(MR_AGE_INTENSITY_MAX_DAYS * 10)).toBe(1);
+    it("returns the Vintage tier at its threshold", () => {
+        expect(getMrAgeTier(7).label).toBe("Vintage");
     });
 
-    it("clamps negative ages to 0", () => {
-        expect(getMrAgeIntensity(-5)).toBe(0);
+    it("returns the Ancient tier at its threshold", () => {
+        expect(getMrAgeTier(14).label).toBe("Ancient");
+    });
+
+    it("returns the Fossil tier at its threshold and beyond", () => {
+        expect(getMrAgeTier(30).label).toBe("Fossil");
+        expect(getMrAgeTier(365).label).toBe("Fossil");
+    });
+
+    it("has exactly 5 tiers, sorted ascending by threshold", () => {
+        expect(MR_AGE_TIERS).toHaveLength(5);
+        expect(MR_AGE_TIERS.map((tier) => tier.minDays)).toEqual([...MR_AGE_TIERS.map((tier) => tier.minDays)].sort((a, b) => a - b));
     });
 });

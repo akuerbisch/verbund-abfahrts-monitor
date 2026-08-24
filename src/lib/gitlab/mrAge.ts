@@ -1,6 +1,21 @@
-// Age at which the highlight reaches full intensity — merge requests open
-// longer than this are as "old" as the color scale gets.
-export const MR_AGE_INTENSITY_MAX_DAYS = 14;
+export interface MrAgeTier {
+    label: string;
+    emoji: string;
+    minDays: number;
+    barOpacity: number;
+    badgeColor: "gray" | "warning" | "orange" | "error";
+}
+
+// Five discrete bands, from "just opened" to "practically fossilized" — thresholds
+// roughly double each time (0/3/7/14/30 days) so the scale still feels meaningful
+// whether a project reviews MRs same-day or lets them sit for a month.
+export const MR_AGE_TIERS: readonly MrAgeTier[] = [
+    { minDays: 0, label: "Fresh", emoji: "🐣", barOpacity: 0, badgeColor: "gray" },
+    { minDays: 3, label: "Ripening", emoji: "🍌", barOpacity: 0.3, badgeColor: "warning" },
+    { minDays: 7, label: "Vintage", emoji: "🍷", barOpacity: 0.55, badgeColor: "orange" },
+    { minDays: 14, label: "Ancient", emoji: "🏺", barOpacity: 0.8, badgeColor: "error" },
+    { minDays: 30, label: "Fossil", emoji: "🦴", barOpacity: 1, badgeColor: "error" },
+];
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -8,7 +23,7 @@ export function getMrAgeInDays(createdAt: string, now: Date = new Date()): numbe
     return Math.max(0, (now.getTime() - new Date(createdAt).getTime()) / MS_PER_DAY);
 }
 
-/** 0 for a freshly opened MR, ramping linearly to 1 at MR_AGE_INTENSITY_MAX_DAYS and beyond. */
-export function getMrAgeIntensity(ageInDays: number): number {
-    return Math.min(1, Math.max(0, ageInDays / MR_AGE_INTENSITY_MAX_DAYS));
+/** The last tier whose threshold the given age has reached. */
+export function getMrAgeTier(ageInDays: number): MrAgeTier {
+    return MR_AGE_TIERS.reduce((selected, tier) => (ageInDays >= tier.minDays ? tier : selected), MR_AGE_TIERS[0]);
 }
