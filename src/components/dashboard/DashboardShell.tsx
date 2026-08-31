@@ -3,11 +3,13 @@
 import { AppHeader } from "@/components/dashboard/AppHeader";
 import { Dashboard } from "@/components/dashboard/Dashboard";
 import { ToastViewport } from "@/components/base/toast/ToastViewport";
+import { useAutoReloadOnDeploy } from "@/hooks/useAutoReloadOnDeploy";
 import { useCards } from "@/hooks/useCards";
 
 export function DashboardShell() {
     const { cards, createDeparturesCard, createGitlabMergeRequestsCard, createJiraVersionsCard, createWeatherCard, updateCard, removeCard, reorderCards } =
         useCards();
+    useAutoReloadOnDeploy();
 
     return (
         <div className="flex min-h-screen flex-col">

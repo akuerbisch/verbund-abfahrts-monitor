@@ -13,6 +13,9 @@ const inter = Inter({
 export const metadata: Metadata = {
     title: "Departure Board",
     description: "Live bus and tram departures for your saved stops",
+    // Read by useAutoReloadOnDeploy as the baseline build id — kept in sync with
+    // the X-Build-Id header set in next.config.ts, both from the same env var.
+    other: { "build-id": process.env.VERCEL_GIT_COMMIT_SHA ?? "dev" },
 };
 
 export const viewport: Viewport = {
