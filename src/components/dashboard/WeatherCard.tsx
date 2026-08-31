@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Droplets02, MarkerPin01, ThermometerCold, Trash01, Wind02, X } from "@untitledui/icons";
+import { CloudRaining03, Droplets02, MarkerPin01, ThermometerCold, Trash01, Wind02, X } from "@untitledui/icons";
 import { ButtonUtility } from "@/components/base/buttons/button-utility";
 import { CARD_MAX_HEIGHT_CLASS } from "@/components/dashboard/cardLayout";
 import { DragHandle } from "@/components/dashboard/DragHandle";
@@ -10,8 +10,17 @@ import { LoadingIndicator } from "@/components/application/loading-indicator/loa
 import { WeatherLocationSearchBox } from "@/components/weather/WeatherLocationSearchBox";
 import { useWeather } from "@/hooks/useWeather";
 import { showToast } from "@/lib/toast/toastStore";
+import { getRainTiming } from "@/lib/weather/rainTiming";
 import { describeWeatherCode } from "@/lib/weather/weatherCode";
 import type { WeatherCardConfig } from "@/types/domain";
+
+// How often the rain-timing indicator re-evaluates against the clock, independent of
+// the (much slower) network poll — a pure client-side recompute, so this stays cheap.
+const RAIN_TIMING_TICK_MS = 60_000;
+
+function rainTimingLabel(status: "raining" | "expected", startsInMinutes: number | null): string {
+    return status === "raining" ? "Raining now" : `Rain in ~${startsInMinutes} min`;
+}
 
 interface WeatherCardProps {
     card: WeatherCardConfig;
@@ -29,6 +38,12 @@ export function WeatherCard({ card, dragHandleProps, onUpdate, onRemove }: Weath
 
     const location = card.latitude !== null && card.longitude !== null ? { latitude: card.latitude, longitude: card.longitude } : null;
     const { forecast, status } = useWeather(location);
+
+    const [tickNow, setTickNow] = useState(() => new Date());
+    useEffect(() => {
+        const interval = setInterval(() => setTickNow(new Date()), RAIN_TIMING_TICK_MS);
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         if (status === "error") {
@@ -104,6 +119,17 @@ export function WeatherCard({ card, dragHandleProps, onUpdate, onRemove }: Weath
                                         <p className="text-sm text-tertiary">{describeWeatherCode(forecast.current.weatherCode).label}</p>
                                     </div>
                                 </div>
+
+                                {(() => {
+                                    const rainTiming = getRainTiming(forecast.minutely, tickNow);
+                                    if (rainTiming.status !== "raining" && rainTiming.status !== "expected") return null;
+                                    return (
+                                        <p className="mt-2 flex items-center gap-1 text-xs text-fg-brand-primary">
+                                            <CloudRaining03 className="size-3.5" />
+                                            {rainTimingLabel(rainTiming.status, rainTiming.startsInMinutes)}
+                                        </p>
+                                    );
+                                })()}
 
                                 <div className="mt-3 flex items-center gap-4 text-xs text-tertiary">
                                     <span className="flex items-center gap-1">

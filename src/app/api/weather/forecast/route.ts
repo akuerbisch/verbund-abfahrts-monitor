@@ -19,6 +19,7 @@ export async function POST(request: Request) {
             longitude: String(longitude),
             current: "temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weather_code",
             daily: "weather_code,temperature_2m_max,temperature_2m_min",
+            minutely_15: "precipitation,rain",
             forecast_days: "5",
             timezone: "auto",
         });

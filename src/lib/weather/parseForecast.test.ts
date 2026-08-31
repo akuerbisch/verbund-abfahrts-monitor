@@ -24,6 +24,8 @@ describe("parseWeatherForecast", () => {
                 { date: "2026-08-01", weatherCode: 2, tempMax: 24, tempMin: 14 },
                 { date: "2026-08-02", weatherCode: 61, tempMax: 19, tempMin: 12 },
             ],
+            minutely: [],
+            utcOffsetSeconds: 0,
         });
     });
 
@@ -57,5 +59,56 @@ describe("parseWeatherForecast", () => {
     it("returns null for a malformed top-level response", () => {
         expect(parseWeatherForecast(null)).toBeNull();
         expect(parseWeatherForecast(undefined)).toBeNull();
+    });
+
+    it("defaults minutely and utcOffsetSeconds when minutely_15 is missing", () => {
+        const result = parseWeatherForecast(forecastRaw());
+        expect(result?.minutely).toEqual([]);
+        expect(result?.utcOffsetSeconds).toBe(0);
+    });
+
+    it("converts naive local-time minutely entries to absolute timestamps using utc_offset_seconds", () => {
+        const result = parseWeatherForecast(
+            forecastRaw({
+                utc_offset_seconds: 7200, // UTC+2
+                minutely_15: { time: ["2026-08-01T10:00", "2026-08-01T10:15"], precipitation: [0, 0.4] },
+            }),
+        );
+
+        expect(result?.utcOffsetSeconds).toBe(7200);
+        expect(result?.minutely).toEqual([
+            { timestampMs: Date.parse("2026-08-01T10:00Z") - 7200 * 1000, rainMm: 0 },
+            { timestampMs: Date.parse("2026-08-01T10:15Z") - 7200 * 1000, rainMm: 0.4 },
+        ]);
+    });
+
+    it("prefers the rain series over precipitation when both are present", () => {
+        const result = parseWeatherForecast(
+            forecastRaw({
+                minutely_15: { time: ["2026-08-01T10:00"], precipitation: [1.2], rain: [0.3] },
+            }),
+        );
+
+        expect(result?.minutely).toEqual([{ timestampMs: Date.parse("2026-08-01T10:00Z"), rainMm: 0.3 }]);
+    });
+
+    it("falls back to precipitation when rain is absent", () => {
+        const result = parseWeatherForecast(
+            forecastRaw({
+                minutely_15: { time: ["2026-08-01T10:00"], precipitation: [1.2] },
+            }),
+        );
+
+        expect(result?.minutely).toEqual([{ timestampMs: Date.parse("2026-08-01T10:00Z"), rainMm: 1.2 }]);
+    });
+
+    it("skips malformed minutely entries without failing the whole forecast", () => {
+        const result = parseWeatherForecast(
+            forecastRaw({
+                minutely_15: { time: ["2026-08-01T10:00", "not-a-time"], precipitation: [0.1, "oops"] },
+            }),
+        );
+
+        expect(result?.minutely).toEqual([{ timestampMs: Date.parse("2026-08-01T10:00Z"), rainMm: 0.1 }]);
     });
 });
