@@ -10,6 +10,7 @@ import { DepartureRow } from "@/components/dashboard/DepartureRow";
 import { DragHandle } from "@/components/dashboard/DragHandle";
 import type { DragHandleProps } from "@/components/dashboard/SortableCard";
 import { LoadingIndicator } from "@/components/application/loading-indicator/loading-indicator";
+import { HighlightThresholdControl } from "@/components/settings/HighlightThresholdControl";
 import { LineFilterControl } from "@/components/settings/LineFilterControl";
 import { MaxDeparturesPerLineControl } from "@/components/settings/MaxDeparturesPerLineControl";
 import { RefreshIntervalControl } from "@/components/settings/RefreshIntervalControl";
@@ -105,6 +106,10 @@ export function DepartureCard({ card, dragHandleProps, onUpdate, onRemove }: Dep
                                             onChange={(count) => onUpdate({ maxDeparturesPerLine: count })}
                                         />
                                     )}
+                                    <HighlightThresholdControl
+                                        highlightThresholdMinutes={card.highlightThresholdMinutes}
+                                        onChange={(minutes) => onUpdate({ highlightThresholdMinutes: minutes })}
+                                    />
                                 </div>
                                 <LineFilterControl
                                     availableLines={availableLines}
@@ -148,7 +153,14 @@ export function DepartureCard({ card, dragHandleProps, onUpdate, onRemove }: Dep
                                                             <p className="truncate text-xs font-medium text-tertiary">{directionGroup.direction}</p>
                                                             <ul className="divide-y divide-secondary">
                                                                 {directionGroup.departures.map((departure, index) => (
-                                                                    <DepartureRow key={index} departure={departure} hideLine hideDirection />
+                                                                    <DepartureRow
+                                                                        key={index}
+                                                                        departure={departure}
+                                                                        hideLine
+                                                                        hideDirection
+                                                                        isNext={index === 0}
+                                                                        highlightThresholdMinutes={card.highlightThresholdMinutes}
+                                                                    />
                                                                 ))}
                                                             </ul>
                                                         </div>
@@ -160,7 +172,12 @@ export function DepartureCard({ card, dragHandleProps, onUpdate, onRemove }: Dep
                                 ) : (
                                     <ul className="mt-2 divide-y divide-secondary">
                                         {filteredDepartures.map((departure, index) => (
-                                            <DepartureRow key={`${departure.line}-${departure.direction}-${index}`} departure={departure} />
+                                            <DepartureRow
+                                                key={`${departure.line}-${departure.direction}-${index}`}
+                                                departure={departure}
+                                                isNext={index === 0}
+                                                highlightThresholdMinutes={card.highlightThresholdMinutes}
+                                            />
                                         ))}
                                     </ul>
                                 )}

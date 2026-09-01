@@ -3,6 +3,7 @@ import { createDepartureCard, createGitlabCard, createJiraCard, createWeatherCar
 import { CARDS_KEY } from "./storageKeys";
 import {
     DEFAULT_HIDE_DRAFTS,
+    DEFAULT_HIGHLIGHT_THRESHOLD_MINUTES,
     DEFAULT_JIRA_VERSION_SORT_ORDER,
     DEFAULT_MAX_DEPARTURES_PER_LINE,
     DEFAULT_MR_SORT_ORDER,
@@ -44,6 +45,7 @@ describe("cards", () => {
             groupByLine: false,
             maxDeparturesPerLine: DEFAULT_MAX_DEPARTURES_PER_LINE,
             lineFilter: [],
+            highlightThresholdMinutes: DEFAULT_HIGHLIGHT_THRESHOLD_MINUTES,
         });
     });
 
@@ -87,6 +89,35 @@ describe("cards", () => {
         const [card] = createDepartureCard();
         const result = updateCard(card.id, { lineFilter: ["34", "58E"] }) as DepartureCardConfig[];
         expect(result[0].lineFilter).toEqual(["34", "58E"]);
+    });
+
+    it("updates the highlight threshold via patch", () => {
+        const [card] = createDepartureCard();
+        const result = updateCard(card.id, { highlightThresholdMinutes: 5 }) as DepartureCardConfig[];
+        expect(result[0].highlightThresholdMinutes).toBe(5);
+    });
+
+    it("backfills the highlight threshold default for a stored card that predates the field", () => {
+        (globalThis as unknown as { window: { localStorage: MemoryStorage } }).window.localStorage.setItem(
+            CARDS_KEY,
+            JSON.stringify([
+                {
+                    id: "1",
+                    type: "departures",
+                    stopName: null,
+                    stopLid: null,
+                    refreshIntervalSeconds: DEFAULT_REFRESH_INTERVAL_SECONDS,
+                    groupByLine: false,
+                    maxDeparturesPerLine: DEFAULT_MAX_DEPARTURES_PER_LINE,
+                    lineFilter: [],
+                    createdAt: new Date().toISOString(),
+                },
+            ]),
+        );
+
+        const cards = loadCards() as DepartureCardConfig[];
+        expect(cards).toHaveLength(1);
+        expect(cards[0].highlightThresholdMinutes).toBe(DEFAULT_HIGHLIGHT_THRESHOLD_MINUTES);
     });
 
     it("rejects a stored card whose lineFilter isn't a string array", () => {

@@ -2,6 +2,7 @@ import { safeGetItem, safeSetItem } from "@/lib/storage/safeStorage";
 import { CARDS_KEY } from "@/lib/storage/storageKeys";
 import {
     DEFAULT_HIDE_DRAFTS,
+    DEFAULT_HIGHLIGHT_THRESHOLD_MINUTES,
     DEFAULT_JIRA_VERSION_SORT_ORDER,
     DEFAULT_MAX_DEPARTURES_PER_LINE,
     DEFAULT_MR_SORT_ORDER,
@@ -26,6 +27,8 @@ function isDepartureCardConfig(value: unknown): value is DepartureCardConfig {
         typeof card.maxDeparturesPerLine === "number" &&
         Array.isArray(card.lineFilter) &&
         card.lineFilter.every((line) => typeof line === "string") &&
+        // Optional: older stored cards predate this field — loadCards() backfills a default for them.
+        (card.highlightThresholdMinutes === undefined || typeof card.highlightThresholdMinutes === "number") &&
         typeof card.createdAt === "string"
     );
 }
@@ -82,7 +85,15 @@ export function loadCards(): CardConfig[] {
 
     try {
         const parsed = JSON.parse(raw);
-        return Array.isArray(parsed) ? parsed.filter(isCardConfig) : [];
+        if (!Array.isArray(parsed)) return [];
+
+        return parsed
+            .filter(isCardConfig)
+            .map((card) =>
+                card.type === "departures"
+                    ? { ...card, highlightThresholdMinutes: card.highlightThresholdMinutes ?? DEFAULT_HIGHLIGHT_THRESHOLD_MINUTES }
+                    : card,
+            );
     } catch {
         return [];
     }
@@ -103,6 +114,7 @@ export function createDepartureCard(): CardConfig[] {
         groupByLine: false,
         maxDeparturesPerLine: DEFAULT_MAX_DEPARTURES_PER_LINE,
         lineFilter: [],
+        highlightThresholdMinutes: DEFAULT_HIGHLIGHT_THRESHOLD_MINUTES,
         createdAt: new Date().toISOString(),
     };
 
