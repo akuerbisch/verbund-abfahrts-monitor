@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePollingPaused } from "@/hooks/usePollingPaused";
 import type { ParsedDeparture } from "@/lib/vao/parseDepartures";
 
@@ -25,7 +25,7 @@ function adjustDepartures(raw: RawBoard, now: number): ParsedDeparture[] {
     return raw.departures.map((departure) => ({ ...departure, minutesUntil: departure.minutesUntil - elapsedMinutes }));
 }
 
-export function useStationBoard(stop: Stop | null, refreshIntervalSeconds: number) {
+export function useStationBoard(stop: Stop | null, refreshIntervalSeconds: number, lineFilter: string[] = []) {
     const stopName = stop?.name ?? null;
     const stopLid = stop?.lid ?? null;
 
@@ -35,6 +35,13 @@ export function useStationBoard(stop: Stop | null, refreshIntervalSeconds: numbe
     const rawRef = useRef<RawBoard | null>(null);
     const { isPaused } = usePollingPaused();
 
+    // lineFilter isn't a referentially-stable array across renders (loadCards() re-parses
+    // the whole cards array from localStorage on every card update, anywhere on the
+    // dashboard) — key on a primitive string instead so unrelated updates don't spuriously
+    // restart polling, and rebuild a stable array from that key for the actual fetch.
+    const lineFilterKey = lineFilter.join("");
+    const stableLineFilter = useMemo(() => (lineFilterKey ? lineFilterKey.split("") : []), [lineFilterKey]);
+
     const fetchDepartures = useCallback(
         async (signal?: AbortSignal) => {
             if (!stopName || !stopLid) return;
@@ -43,7 +50,7 @@ export function useStationBoard(stop: Stop | null, refreshIntervalSeconds: numbe
                 const response = await fetch("/api/departures", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ name: stopName, lid: stopLid }),
+                    body: JSON.stringify({ name: stopName, lid: stopLid, lineFilter: stableLineFilter }),
                     signal,
                 });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -61,7 +68,7 @@ export function useStationBoard(stop: Stop | null, refreshIntervalSeconds: numbe
                 setStatus(rawRef.current ? "stale-error" : "error");
             }
         },
-        [stopName, stopLid],
+        [stopName, stopLid, stableLineFilter],
     );
 
     useEffect(() => {

@@ -15,6 +15,7 @@ import { LineFilterControl } from "@/components/settings/LineFilterControl";
 import { MaxDeparturesPerLineControl } from "@/components/settings/MaxDeparturesPerLineControl";
 import { RefreshIntervalControl } from "@/components/settings/RefreshIntervalControl";
 import { StopSearchBox } from "@/components/stop-search/StopSearchBox";
+import { useAvailableLines } from "@/hooks/useAvailableLines";
 import { useStationBoard } from "@/hooks/useStationBoard";
 import { showToast } from "@/lib/toast/toastStore";
 import { filterDeparturesByLine } from "@/lib/vao/filterDepartures";
@@ -33,7 +34,10 @@ export function DepartureCard({ card, dragHandleProps, onUpdate, onRemove }: Dep
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
     const stop = card.stopName && card.stopLid ? { name: card.stopName, lid: card.stopLid } : null;
-    const { departures, status } = useStationBoard(stop, card.refreshIntervalSeconds);
+    const { departures, status } = useStationBoard(stop, card.refreshIntervalSeconds, card.lineFilter);
+    // Once a filter narrows the main fetch, this one-shot probe (fired only when settings
+    // is open) keeps the picker able to show lines beyond the ones already selected.
+    const probedLines = useAvailableLines(stop, isSettingsOpen && card.lineFilter.length > 0);
 
     useEffect(() => {
         if (status === "error") {
@@ -47,7 +51,7 @@ export function DepartureCard({ card, dragHandleProps, onUpdate, onRemove }: Dep
         }
     }, [status, card.stopName]);
 
-    const availableLines = Array.from(new Set(departures.map((departure) => departure.line))).sort();
+    const availableLines = Array.from(new Set([...departures.map((departure) => departure.line), ...probedLines])).sort();
     const filteredDepartures = filterDeparturesByLine(departures, card.lineFilter);
     const groups = card.groupByLine ? groupDeparturesByLine(filteredDepartures, card.maxDeparturesPerLine) : null;
 

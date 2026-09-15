@@ -39,12 +39,16 @@ function buildEnvelope({ meth, req }: VaoEnvelopeOptions) {
     };
 }
 
-export function buildStationBoardRequest(name: string, lid: string) {
+export function buildStationBoardRequest(name: string, lid: string, lineFilter: string[] = []) {
+    // JOURNEY_FILTER is a shared module-level singleton reused across every request this
+    // process handles — never mutate it. Build a new array when a line filter is present.
+    const jnyFltrL = lineFilter.length > 0 ? [...JOURNEY_FILTER, { type: "LINE", mode: "INC", value: lineFilter.join("|") }] : JOURNEY_FILTER;
+
     return buildEnvelope({
         meth: "StationBoard",
         req: {
             stbLoc: { name, lid },
-            jnyFltrL: JOURNEY_FILTER,
+            jnyFltrL,
             type: "DEP",
             sort: "PT",
             maxJny: MAX_DEPARTURES,
