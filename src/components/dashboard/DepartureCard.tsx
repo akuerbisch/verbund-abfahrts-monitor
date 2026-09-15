@@ -35,9 +35,10 @@ export function DepartureCard({ card, dragHandleProps, onUpdate, onRemove }: Dep
 
     const stop = card.stopName && card.stopLid ? { name: card.stopName, lid: card.stopLid } : null;
     const { departures, status } = useStationBoard(stop, card.refreshIntervalSeconds, card.lineFilter);
-    // Once a filter narrows the main fetch, this one-shot probe (fired only when settings
-    // is open) keeps the picker able to show lines beyond the ones already selected.
-    const probedLines = useAvailableLines(stop, isSettingsOpen && card.lineFilter.length > 0);
+    // The main display board is capped much smaller than this probe, so an infrequent line
+    // can be invisible to the picker even unfiltered — refresh it with a wider window
+    // whenever settings opens, not just once a filter is already narrowing the main fetch.
+    const probedLines = useAvailableLines(stop, isSettingsOpen);
 
     useEffect(() => {
         if (status === "error") {

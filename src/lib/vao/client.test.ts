@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildStationBoardRequest } from "./client";
-import { JOURNEY_FILTER } from "./constants";
+import { JOURNEY_FILTER, MAX_DEPARTURES } from "./constants";
 
 function getReq(request: ReturnType<typeof buildStationBoardRequest>) {
-    return request.svcReqL[0].req as { jnyFltrL: unknown[] };
+    return request.svcReqL[0].req as { jnyFltrL: unknown[]; maxJny: number };
 }
 
 describe("buildStationBoardRequest", () => {
@@ -30,5 +30,13 @@ describe("buildStationBoardRequest", () => {
         buildStationBoardRequest("Stop A", "lid-a", ["1"]);
         buildStationBoardRequest("Stop B", "lid-b", ["2", "3"]);
         expect(JSON.stringify(JOURNEY_FILTER)).toBe(before);
+    });
+
+    it("defaults maxJny to MAX_DEPARTURES", () => {
+        expect(getReq(buildStationBoardRequest("Graz Hauptbahnhof", "lid-1")).maxJny).toBe(MAX_DEPARTURES);
+    });
+
+    it("uses a given maxJny override", () => {
+        expect(getReq(buildStationBoardRequest("Graz Hauptbahnhof", "lid-1", [], 50)).maxJny).toBe(50);
     });
 });

@@ -39,7 +39,7 @@ function buildEnvelope({ meth, req }: VaoEnvelopeOptions) {
     };
 }
 
-export function buildStationBoardRequest(name: string, lid: string, lineFilter: string[] = []) {
+export function buildStationBoardRequest(name: string, lid: string, lineFilter: string[] = [], maxJny: number = MAX_DEPARTURES) {
     // JOURNEY_FILTER is a shared module-level singleton reused across every request this
     // process handles — never mutate it. Build a new array when a line filter is present.
     const jnyFltrL = lineFilter.length > 0 ? [...JOURNEY_FILTER, { type: "LINE", mode: "INC", value: lineFilter.join("|") }] : JOURNEY_FILTER;
@@ -51,7 +51,7 @@ export function buildStationBoardRequest(name: string, lid: string, lineFilter: 
             jnyFltrL,
             type: "DEP",
             sort: "PT",
-            maxJny: MAX_DEPARTURES,
+            maxJny,
         },
     });
 }

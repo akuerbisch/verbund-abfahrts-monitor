@@ -12,3 +12,8 @@ export const VAO_ENVELOPE_BASE = {
 export const JOURNEY_FILTER = [{ type: "PROD", mode: "INC", value: 4087 }] as const;
 
 export const MAX_DEPARTURES = 15;
+
+// Used only for the line-picker's "discover what lines exist at this stop" probe, not for
+// the regular display board — a much wider window so an infrequent line isn't invisible in
+// the picker just because it has no departure within the display board's much smaller cap.
+export const MAX_DEPARTURES_FOR_LINE_DISCOVERY = 50;
