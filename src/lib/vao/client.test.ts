@@ -3,7 +3,7 @@ import { buildStationBoardRequest } from "./client";
 import { JOURNEY_FILTER, MAX_DEPARTURES } from "./constants";
 
 function getReq(request: ReturnType<typeof buildStationBoardRequest>) {
-    return request.svcReqL[0].req as { jnyFltrL: unknown[]; maxJny: number };
+    return request.svcReqL[0].req as { jnyFltrL: unknown[]; maxJny: number; dur?: number };
 }
 
 describe("buildStationBoardRequest", () => {
@@ -38,5 +38,13 @@ describe("buildStationBoardRequest", () => {
 
     it("uses a given maxJny override", () => {
         expect(getReq(buildStationBoardRequest("Graz Hauptbahnhof", "lid-1", [], 50)).maxJny).toBe(50);
+    });
+
+    it("omits dur when no duration is given", () => {
+        expect(getReq(buildStationBoardRequest("Graz Hauptbahnhof", "lid-1")).dur).toBeUndefined();
+    });
+
+    it("includes dur when a duration is given", () => {
+        expect(getReq(buildStationBoardRequest("Graz Hauptbahnhof", "lid-1", [], 200, 1440)).dur).toBe(1440);
     });
 });

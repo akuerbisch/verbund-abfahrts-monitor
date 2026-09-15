@@ -39,7 +39,13 @@ function buildEnvelope({ meth, req }: VaoEnvelopeOptions) {
     };
 }
 
-export function buildStationBoardRequest(name: string, lid: string, lineFilter: string[] = [], maxJny: number = MAX_DEPARTURES) {
+export function buildStationBoardRequest(
+    name: string,
+    lid: string,
+    lineFilter: string[] = [],
+    maxJny: number = MAX_DEPARTURES,
+    durationMinutes?: number,
+) {
     // JOURNEY_FILTER is a shared module-level singleton reused across every request this
     // process handles — never mutate it. Build a new array when a line filter is present.
     const jnyFltrL = lineFilter.length > 0 ? [...JOURNEY_FILTER, { type: "LINE", mode: "INC", value: lineFilter.join("|") }] : JOURNEY_FILTER;
@@ -52,6 +58,9 @@ export function buildStationBoardRequest(name: string, lid: string, lineFilter: 
             type: "DEP",
             sort: "PT",
             maxJny,
+            // `dur` (minutes) is a HAFAS-standard time-window param, distinct from maxJny's
+            // journey-count cap — unconfirmed for this specific gate, only sent when given.
+            ...(durationMinutes !== undefined ? { dur: durationMinutes } : {}),
         },
     });
 }
