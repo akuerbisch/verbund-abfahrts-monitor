@@ -21,21 +21,33 @@ export async function POST(request: Request) {
     }
 
     try {
-        let raw: unknown;
+        let departures: unknown[];
         try {
-            raw = await callVaoGate(buildStationBoardRequest(name, lid, lineFilter, maxJny, durationMinutes));
+            const raw = await callVaoGate(buildStationBoardRequest(name, lid, lineFilter, maxJny, durationMinutes));
+            departures = parseStationBoardResponse(raw);
+
+            // The upstream line filter is unverified (undocumented API) — a rejected request
+            // throws and is handled below, but the gate might instead silently ignore a filter
+            // shape it doesn't support and return a "successful" empty board. Treat that the
+            // same way: fall back to unfiltered rather than showing an empty card when the
+            // stop genuinely has upcoming service on the selected lines.
+            if (lineFilter.length > 0 && departures.length === 0) {
+                console.warn("VAO gate returned zero departures for a line-filtered StationBoard request, retrying unfiltered");
+                const rawUnfiltered = await callVaoGate(buildStationBoardRequest(name, lid, [], maxJny, durationMinutes));
+                departures = parseStationBoardResponse(rawUnfiltered);
+            }
         } catch (error) {
-            // The upstream line filter is unverified (undocumented API) — if it's rejected,
-            // fall back to an unfiltered request rather than breaking the card outright.
+            // Same fallback, for the case where the filtered request is rejected outright.
             if (lineFilter.length > 0 && error instanceof VaoUpstreamError) {
                 console.warn("VAO gate rejected a line-filtered StationBoard request, retrying unfiltered", error.message);
-                raw = await callVaoGate(buildStationBoardRequest(name, lid, [], maxJny, durationMinutes));
+                const rawUnfiltered = await callVaoGate(buildStationBoardRequest(name, lid, [], maxJny, durationMinutes));
+                departures = parseStationBoardResponse(rawUnfiltered);
             } else {
                 throw error;
             }
         }
 
-        return NextResponse.json({ departures: parseStationBoardResponse(raw), fetchedAt: new Date().toISOString() });
+        return NextResponse.json({ departures, fetchedAt: new Date().toISOString() });
     } catch (error) {
         if (error instanceof VaoTimeoutError) {
             return NextResponse.json({ error: error.message }, { status: 504 });
